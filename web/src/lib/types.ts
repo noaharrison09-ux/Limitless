@@ -86,7 +86,7 @@ export type Today = {
   };
   goals: Goal[];
   projects: Pick<Project, "id" | "name" | "emoji" | "status">[];
-  journal: { writtenToday: boolean; streak: number; tomorrowSet: number };
+  journal: { writtenToday: boolean; streak: number; tomorrowSet: number; prompt: string | null };
 };
 
 export type TimedReminder = { enabled: boolean; time: string };
@@ -112,3 +112,20 @@ export type BulkSettings = {
   calorieTarget: number | null;
   proteinTarget: number | null;
 };
+
+export type JournalPrompt = {
+  id: number;
+  date: string;
+  kind: "reflect" | "recall";
+  prompt_key: string;
+  prompt: string;
+  /** Recall: what you actually wrote back then. */
+  hint: string | null;
+  source_date: string | null;
+  answer: string | null;
+  revealed: number;
+  /** Recall self-check: 2 nailed it, 1 partly, 0 forgot. */
+  recalled: number | null;
+};
+
+export type DayPrompts = { date: string; reflect: JournalPrompt | null; recall: JournalPrompt | null };

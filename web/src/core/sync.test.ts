@@ -57,6 +57,12 @@ describe("locking and unlocking", () => {
     expect(await decryptSyncFile(file, PASS)).toEqual(p);
   });
 
+  it("pads the locked file so its size doesn't reveal how much is on your calendar", () => {
+    const small = lock(payload({ events: [eventsCal("Practice")] }));
+    const bigger = lock(payload({ events: [eventsCal("Practice", "Dentist", "Lift", "Game", "Study")] }));
+    expect(small.data.length).toBe(bigger.data.length);
+  });
+
   it("refuses the wrong passphrase", async () => {
     await expect(decryptSyncFile(lock(payload()), "not the right passphrase")).rejects.toThrow("doesn't match");
   });
@@ -221,6 +227,13 @@ describe("the GitHub script", () => {
     expect(await main(outDir, { CALENDAR_ICAL_URL: `${base}/apple.ics` })).toContain("skipping");
     expect(await main(outDir, { SYNC_PASSPHRASE: "short", CALENDAR_ICAL_URL: `${base}/apple.ics` })).toContain("nothing was published");
     expect(fs.existsSync(path.join(outDir, "sync"))).toBe(false);
+  });
+
+  it("uses only Node's built-in modules, so no outside package runs next to your links", () => {
+    const source = fs.readFileSync(new URL("../../../scripts/sync-calendars.ts", import.meta.url), "utf8");
+    const imports = [...source.matchAll(/^import .* from "([^"]+)";$/gm)].map((m) => m[1]);
+    expect(imports.length).toBeGreaterThan(0);
+    expect(imports.every((i) => i.startsWith("node:"))).toBe(true);
   });
 
   it("reads several links and turns webcal:// into https://", () => {

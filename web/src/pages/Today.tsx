@@ -300,6 +300,12 @@ export function TodayPage() {
                 : "Add tomorrow's non-negotiables before bed."
               : "What went right, what went wrong, and the non-negotiables for tomorrow."}
           </p>
+          {data.journal.prompt && (
+            <blockquote className="prompt-quote">
+              <span className="eyebrow">Today's prompt</span>
+              {data.journal.prompt}
+            </blockquote>
+          )}
           <Link to="/journal" className={`btn block ${data.journal.writtenToday ? "" : "primary"}`}>
             <Icon name="journal" size={18} /> {data.journal.writtenToday ? "Open journal" : "Write today's entry"}
           </Link>

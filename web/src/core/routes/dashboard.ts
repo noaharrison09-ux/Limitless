@@ -5,6 +5,7 @@ import { addDays, dayBoundsUtc, nowLocal } from "../time.ts";
 import { weightStats, type WeightPoint } from "../bodyStats.ts";
 import { journalStreak, nonNegotiablesFor } from "./journal.ts";
 import { listGoals } from "./goals.ts";
+import { ensurePrompts } from "../prompts.ts";
 
 export const dashboardRouter = Router();
 
@@ -71,6 +72,7 @@ dashboardRouter.get("/today", (_req, res) => {
       writtenToday: !!get("SELECT 1 FROM journal_entries WHERE date = ?", today),
       streak: journalStreak(today),
       tomorrowSet: nonNegotiablesFor(addDays(today, 1)).length,
+      prompt: ensurePrompts(today).reflect?.prompt ?? null,
     },
   });
 });

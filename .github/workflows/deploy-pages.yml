@@ -2,10 +2,10 @@
 # One-time setup: repo Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
 #
 # Calendar auto-sync (optional): add these in Settings -> Secrets and variables -> Actions:
-#   SYNC_PASSPHRASE     a passphrase you make up (type the same one into the app)
-#   CALENDAR_ICAL_URL   your Apple Calendar public link (one per line for several)
+#   SYNC_PASSPHRASE     a passphrase you make up, 16+ characters (type the same one into the app)
+#   CALENDAR_ICAL_URL   your Apple Calendar link (one per line for several)
 #   SCHOOLOGY_ICAL_URL  your Schoology calendar link (imported as homework)
-# Every run then fetches those calendars, locks them with the passphrase, and publishes the
+# Every run then fetches those calendars, locks them with the passphrase, and publishes only the
 # locked file next to the app. The schedule below refreshes them every 3 hours.
 name: Deploy to GitHub Pages
 
@@ -27,7 +27,43 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # The only job that ever sees your calendar links. It installs no npm packages and runs one
+  # plain-Node script, so no outside code is in the room with your secrets, and its GitHub
+  # token can only read the repo. What it hands on is already locked with your passphrase.
+  sync:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    outputs:
+      synced: ${{ steps.sync.outputs.synced }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Sync calendars (locked with your passphrase)
+        id: sync
+        run: |
+          node scripts/sync-calendars.ts locked
+          if [ -f locked/sync/data.json ]; then echo "synced=true" >> "$GITHUB_OUTPUT"; fi
+        env:
+          SYNC_PASSPHRASE: ${{ secrets.SYNC_PASSPHRASE }}
+          CALENDAR_ICAL_URL: ${{ secrets.CALENDAR_ICAL_URL }}
+          SCHOOLOGY_ICAL_URL: ${{ secrets.SCHOOLOGY_ICAL_URL }}
+
+      - if: steps.sync.outputs.synced == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: calendar-sync
+          path: locked
+          retention-days: 1
+
   build:
+    needs: sync
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -42,12 +78,12 @@ jobs:
       - run: npm test
       - run: npm run build
 
-      - name: Sync calendars
-        run: node scripts/sync-calendars.ts dist
-        env:
-          SYNC_PASSPHRASE: ${{ secrets.SYNC_PASSPHRASE }}
-          CALENDAR_ICAL_URL: ${{ secrets.CALENDAR_ICAL_URL }}
-          SCHOOLOGY_ICAL_URL: ${{ secrets.SCHOOLOGY_ICAL_URL }}
+      - name: Add the locked calendar file
+        if: needs.sync.outputs.synced == 'true'
+        uses: actions/download-artifact@v4
+        with:
+          name: calendar-sync
+          path: dist
 
       - uses: actions/configure-pages@v5
 

@@ -4,7 +4,7 @@
  * Your data isn't here: it lives in the app's on-device database (IndexedDB). Synced calendars
  * (sync/data.json) are never cached here.
  */
-const CACHE = "limitless-v4";
+const CACHE = "limitless-v5";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png"];
 
 const scoped = (path) => new URL(path, self.registration.scope).href;

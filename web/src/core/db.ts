@@ -87,6 +87,25 @@ CREATE TABLE IF NOT EXISTS non_negotiables (
 );
 CREATE INDEX IF NOT EXISTS non_negotiables_for_date ON non_negotiables(for_date);
 
+-- Daily journal prompts, made on the phone: a reflection prompt and a memory-recall question.
+CREATE TABLE IF NOT EXISTS journal_prompts (
+  id INTEGER PRIMARY KEY,
+  date TEXT NOT NULL,
+  -- 'reflect' or 'recall'
+  kind TEXT NOT NULL,
+  -- which prompt it was, so it isn't repeated too soon
+  prompt_key TEXT NOT NULL,
+  prompt TEXT NOT NULL,
+  -- recall: what you actually wrote back then (shown when you tap Reveal)
+  hint TEXT,
+  source_date TEXT,
+  answer TEXT,
+  revealed INTEGER NOT NULL DEFAULT 0,
+  -- recall self-check: 2 nailed it, 1 partly, 0 forgot
+  recalled INTEGER,
+  UNIQUE (date, kind)
+);
+
 CREATE TABLE IF NOT EXISTS homework (
   id INTEGER PRIMARY KEY,
   title TEXT NOT NULL,
@@ -163,6 +182,7 @@ export const DATA_TABLES = [
   "goal_steps",
   "journal_entries",
   "non_negotiables",
+  "journal_prompts",
   "homework",
   "projects",
   "project_tasks",

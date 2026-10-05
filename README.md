@@ -1,6 +1,6 @@
 # Limitless
 
-A personal life dashboard that lives on your phone's Home Screen, in clean white with brushed dark-silver accents. It runs entirely on your phone: there's no server and no account, and nothing you enter leaves the device. It's hosted free on GitHub Pages.
+A personal life dashboard that lives on your phone's Home Screen, in matte black with brushed-silver accents. It runs entirely on your phone: there's no server and no account, and nothing you enter leaves the device. It's hosted free on GitHub Pages.
 
 ![Limitless screens](docs/screens.jpg)
 
@@ -9,6 +9,7 @@ A personal life dashboard that lives on your phone's Home Screen, in clean white
 - **Calendar sync**: your Apple Calendar and Schoology homework update by themselves every few hours (set up once; see below).
 - **Homework**: grouped by Overdue, Today, Tomorrow, This week and Later, with class filters. Add assignments yourself, sync them from Schoology, or import a calendar file.
 - **Journal**: what went right, what went wrong, and the **non-negotiables for tomorrow**, which become tomorrow's checklist. The app tracks your streak.
+- **Daily prompts**: a new reflection question every day (sometimes shaped by what's going on, like a goal coming due or non-negotiables slipping), plus a **memory recall** question about your own past entries, spaced 1, 3, 7, 14, 30 and 60 days back. Answer from memory, then reveal what you actually wrote. Made on your phone: no AI service, no cost, and nothing leaves the device.
 - **Body & bulk**: daily weigh-ins with a 7-day average trend chart, weekly gain rate with an "on pace" check, a goal projection, calories and protein, lifts with estimated 1-rep max, and tape measurements.
 - **Goals**: each goal has milestones or a number to hit, plus a progress bar.
 - **Ideas & projects**: an idea inbox for quick thoughts. You can turn any idea into a project with tasks and notes.
@@ -56,7 +57,11 @@ Every 3 hours, GitHub downloads your calendars, locks them with a passphrase onl
 5. **Run it once**: open **Actions → Deploy to GitHub Pages → Run workflow** and wait about two minutes.
 6. **On your phone**: open Limitless → **Settings → Calendar sync**, type the passphrase, and tap **Save and sync**.
 
-**What's public and what isn't.** The calendar links and passphrase are GitHub secrets: hidden from everyone, and blanked out of the workflow logs. The published file (`sync/data.json`) is encrypted with AES-256 using a key made from your passphrase, so it's unreadable without it. The only things anyone can tell from it are when it was last updated and roughly how big it is. Your journal, weight and everything else you type never leave your phone.
+**What's public and what isn't.**
+- The calendar links and passphrase are GitHub secrets: hidden from everyone, and blanked out of the workflow logs.
+- Only one small script (`scripts/sync-calendars.ts`, Node built-ins only) ever sees the links. It runs in its own job with no npm packages installed and a read-only GitHub token, so no outside code runs next to your secrets.
+- The published file (`sync/data.json`) is encrypted with AES-256 using a key made from your passphrase (16+ characters required), so it's unreadable without it. It's padded to a fixed size bucket, so its size doesn't reveal how much is on your calendar. All anyone can tell is when it was last updated.
+- Your journal, weight and everything else you type never leave your phone.
 
 **If it stops updating:** GitHub pauses scheduled workflows in public repos after 60 days without any commits. Limitless warns you on the Settings screen. Open **Actions → Deploy to GitHub Pages** and tap **Enable workflow** (or **Run workflow**).
 
@@ -92,6 +97,7 @@ npm run build      # static site in dist/
 - `web/src/pages`: the screens (React). They "call an API" (`/today`, `/homework`, …) like a normal web app.
 - `web/src/core`: that API, running inside the page. It has a tiny router (`router.ts`), routes in `routes/`, and SQLite compiled to WebAssembly ([sql.js](https://sql.js.org)) in `db.ts`. The database file is saved to the phone's storage (IndexedDB) after every change, by `web/src/lib/localApi.ts`.
 - `web/src/core/calendarFiles.ts`: calendar files in (Schoology/Google `.ics` → homework or events) and out (reminders and due dates with alerts for the phone's Calendar app).
+- `web/src/core/prompts.ts`: the daily journal prompts and memory-recall questions, made on the phone from your own entries.
 - `scripts/sync-calendars.ts` (runs on GitHub) and `web/src/core/sync.ts` (runs on the phone): calendar sync. The script downloads and encrypts (PBKDF2-SHA256 → AES-256-GCM); the app decrypts with WebCrypto and imports.
 - `web/public/sw.js`: the service worker that lets the app load offline from the Home Screen.
 - `scripts/make-icons.mjs`: regenerates the app icons.

@@ -203,7 +203,7 @@ function FoodTab({ s, reload }: { s: Summary; reload: () => void }) {
         <div className="grid-2">
           <div>
             <div className="small muted">Calories</div>
-            <div style={{ fontFamily: "var(--serif)", fontSize: 26, fontWeight: 600 }}>
+            <div style={{ fontFamily: "var(--display)", fontSize: 26, fontWeight: 600 }}>
               {fmtNum(today?.calories ?? 0, 0)}
               {s.bulk.calorieTarget ? <span className="small muted"> / {fmtNum(s.bulk.calorieTarget, 0)}</span> : null}
             </div>
@@ -211,7 +211,7 @@ function FoodTab({ s, reload }: { s: Summary; reload: () => void }) {
           </div>
           <div>
             <div className="small muted">Protein</div>
-            <div style={{ fontFamily: "var(--serif)", fontSize: 26, fontWeight: 600 }}>
+            <div style={{ fontFamily: "var(--display)", fontSize: 26, fontWeight: 600 }}>
               {fmtNum(today?.protein ?? 0, 0)}g
               {s.bulk.proteinTarget ? <span className="small muted"> / {fmtNum(s.bulk.proteinTarget, 0)}g</span> : null}
             </div>

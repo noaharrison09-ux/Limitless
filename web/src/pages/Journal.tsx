@@ -3,7 +3,7 @@ import { Link, useNavigate, useParams } from "react-router-dom";
 import { api, errorMessage, refreshAll, toast } from "../lib/api";
 import { useApi } from "../lib/hooks";
 import { addDays, fmtDay, fmtLongDate, todayStr } from "../lib/dates";
-import type { NonNegotiable } from "../lib/types";
+import type { DayPrompts, JournalPrompt, NonNegotiable } from "../lib/types";
 import { Icon } from "../components/Icon";
 import { Card, ErrorBox, Spinner, TopBar } from "../components/ui";
 
@@ -16,6 +16,84 @@ type History = {
 
 const MOODS = ["😣", "😕", "😐", "🙂", "😄"];
 
+type Kind = JournalPrompt["kind"];
+const RECALL_SCORES = [
+  { value: 2, label: "Nailed it" },
+  { value: 1, label: "Partly" },
+  { value: 0, label: "Forgot" },
+];
+
+/** A fresh question for the day. You can swap it for another until you've answered it. */
+function ReflectCard({ p, value, onChange, onShuffle }: { p: JournalPrompt; value: string; onChange: (v: string) => void; onShuffle?: () => void }) {
+  return (
+    <Card
+      eyebrow="Prompt of the day"
+      action={
+        onShuffle && !p.answer && !value.trim() ? (
+          <button className="icon-btn" aria-label="Show a different prompt" onClick={onShuffle}>
+            <Icon name="refresh" size={18} />
+          </button>
+        ) : undefined
+      }
+    >
+      <p className="prompt-text">{p.prompt}</p>
+      <textarea className="input" value={value} onChange={(e) => onChange(e.target.value)} placeholder="Write whatever comes up…" rows={3} />
+    </Card>
+  );
+}
+
+/** A question about your own past entries: answer from memory, then check. */
+function RecallCard({
+  p,
+  value,
+  onChange,
+  onUpdate,
+  onShuffle,
+}: {
+  p: JournalPrompt;
+  value: string;
+  onChange: (v: string) => void;
+  onUpdate: (patch: { revealed?: boolean; recalled?: number }) => void;
+  onShuffle?: () => void;
+}) {
+  return (
+    <Card
+      eyebrow="Memory recall"
+      action={
+        onShuffle && !p.revealed && !p.answer && !value.trim() ? (
+          <button className="icon-btn" aria-label="Ask a different question" onClick={onShuffle}>
+            <Icon name="refresh" size={18} />
+          </button>
+        ) : undefined
+      }
+    >
+      <p className="prompt-text">{p.prompt}</p>
+      <textarea className="input" value={value} onChange={(e) => onChange(e.target.value)} placeholder="From memory first, no peeking…" rows={3} />
+      {p.hint &&
+        (p.revealed ? (
+          <div className="recall-reveal">
+            <div className="eyebrow">{p.source_date ? `What you wrote on ${fmtDay(p.source_date, { long: true })}` : "What you wrote"}</div>
+            <p>{p.hint}</p>
+            <div className="small muted" style={{ marginBottom: 8 }}>
+              How close were you?
+            </div>
+            <div className="segmented" role="group" aria-label="How close were you?">
+              {RECALL_SCORES.map((s) => (
+                <button key={s.value} className={p.recalled === s.value ? "on" : ""} aria-pressed={p.recalled === s.value} onClick={() => onUpdate({ recalled: s.value })}>
+                  {s.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <button className="btn block" style={{ marginTop: 10 }} onClick={() => onUpdate({ revealed: true })}>
+            <Icon name="sparkle" size={17} /> Reveal what I wrote
+          </button>
+        ))}
+    </Card>
+  );
+}
+
 function JournalEditor({ day, onSaved }: { day: Day; onSaved: (d: Day) => void }) {
   const [right, setRight] = useState(day.entry?.went_right ?? "");
   const [wrong, setWrong] = useState(day.entry?.went_wrong ?? "");
@@ -25,6 +103,34 @@ function JournalEditor({ day, onSaved }: { day: Day; onSaved: (d: Day) => void }
   const [todayList, setTodayList] = useState(day.today);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const prompts = useApi<DayPrompts>(`/journal/prompts/${day.date}`);
+  const [answers, setAnswers] = useState<Record<Kind, string> | null>(null);
+  const isToday = day.date === todayStr();
+
+  useEffect(() => {
+    if (prompts.data && !answers) setAnswers({ reflect: prompts.data.reflect?.answer ?? "", recall: prompts.data.recall?.answer ?? "" });
+  }, [prompts.data, answers]);
+
+  const setAnswer = (kind: Kind, v: string) => setAnswers((a) => ({ reflect: "", recall: "", ...a, [kind]: v }));
+
+  const updatePrompt = async (kind: Kind, patch: Record<string, unknown>) => {
+    try {
+      const row = await api.put<JournalPrompt>(`/journal/prompts/${day.date}/${kind}`, patch);
+      prompts.setData((d) => (d ? { ...d, [kind]: row } : d));
+    } catch (err) {
+      toast(errorMessage(err));
+    }
+  };
+
+  const shuffle = async (kind: Kind) => {
+    try {
+      const row = await api.post<JournalPrompt>(`/journal/prompts/${day.date}/${kind}/shuffle`);
+      prompts.setData((d) => (d ? { ...d, [kind]: row } : d));
+      setAnswer(kind, "");
+    } catch (err) {
+      toast(errorMessage(err));
+    }
+  };
 
   const save = async () => {
     setBusy(true);
@@ -37,6 +143,10 @@ function JournalEditor({ day, onSaved }: { day: Day; onSaved: (d: Day) => void }
         mood,
         tomorrow: tomorrow.filter((t) => t.trim()),
       });
+      for (const kind of ["reflect", "recall"] as const) {
+        const p = prompts.data?.[kind];
+        if (p && answers && answers[kind] !== (p.answer ?? "")) await api.put(`/journal/prompts/${day.date}/${kind}`, { answer: answers[kind] });
+      }
       onSaved(saved);
       toast("Journal saved");
       refreshAll();
@@ -93,6 +203,24 @@ function JournalEditor({ day, onSaved }: { day: Day; onSaved: (d: Day) => void }
           </label>
         </div>
       </Card>
+
+      {prompts.data?.reflect && answers && (
+        <ReflectCard
+          p={prompts.data.reflect}
+          value={answers.reflect}
+          onChange={(v) => setAnswer("reflect", v)}
+          onShuffle={isToday ? () => shuffle("reflect") : undefined}
+        />
+      )}
+      {prompts.data?.recall && answers && (
+        <RecallCard
+          p={prompts.data.recall}
+          value={answers.recall}
+          onChange={(v) => setAnswer("recall", v)}
+          onUpdate={(patch) => updatePrompt("recall", patch)}
+          onShuffle={isToday ? () => shuffle("recall") : undefined}
+        />
+      )}
 
       <Card eyebrow={`For ${fmtDay(addDays(day.date, 1)).toLowerCase()}`} title="Non-negotiables" className="accent-edge">
         <p className="small muted" style={{ margin: "-4px 0 10px" }}>

@@ -214,10 +214,31 @@ function SyncCard() {
           </li>
           <li>Type the passphrase above and tap Save and sync.</li>
         </ol>
-        <p className="small muted">
-          Secrets stay hidden on GitHub, and the file it publishes is locked with your passphrase. Your journal, weight and everything else never leave
-          this phone.
-        </p>
+      </details>
+
+      <details className="help" style={{ marginTop: 10 }}>
+        <summary>Is my calendar private?</summary>
+        <ul>
+          <li>
+            <strong>Your links and passphrase</strong> are GitHub secrets: hidden from everyone, including anyone looking at the repo, and blanked out
+            of GitHub's logs.
+          </li>
+          <li>
+            <strong>Your calendar is locked before anything is published.</strong> GitHub only ever publishes an encrypted file (AES-256). Without your
+            passphrase it's unreadable, and it's padded so even its size doesn't give away how busy you are.
+          </li>
+          <li>
+            <strong>Only one small script</strong> ever touches your links. It runs on its own, with no outside packages, and never prints them.
+          </li>
+          <li>
+            <strong>The passphrase stays on this phone</strong> and in GitHub's secrets. It's never put in a backup file.
+          </li>
+          <li>
+            <strong>Apple's "Public Calendar"</strong> means anyone who has that exact link can view it. The link is long and random, so it can't be
+            guessed. Keep it only in GitHub's secrets, and only turn it on for calendars you want synced.
+          </li>
+          <li>Your journal, weight and everything else you type never leave this phone.</li>
+        </ul>
       </details>
     </Card>
   );

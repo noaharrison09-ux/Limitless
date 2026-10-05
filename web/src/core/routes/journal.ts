@@ -3,6 +3,7 @@ import { DateTime } from "luxon";
 import { all, get, run, tx } from "../db.ts";
 import { addDays, todayStr } from "../time.ts";
 import { HttpError, coerce, idParam, pick, updateRow } from "./crud.ts";
+import { ensurePrompts, promptsFor, shufflePrompt, type PromptKind } from "../prompts.ts";
 
 export const journalRouter = Router();
 
@@ -116,4 +117,39 @@ journalRouter.patch("/non-negotiables/:id", (req, res) => {
 journalRouter.delete("/non-negotiables/:id", (req, res) => {
   run("DELETE FROM non_negotiables WHERE id = ?", idParam(req));
   res.json({ ok: true });
+});
+
+/* ---------- Daily prompts ---------- */
+
+function kindParam(v: unknown): PromptKind {
+  if (v === "reflect" || v === "recall") return v;
+  throw new HttpError(400, "kind must be reflect or recall");
+}
+
+/** Today's prompts are made on first view; other days show whatever was saved for them. */
+journalRouter.get("/prompts/:date", (req, res) => {
+  const date = dateParam(req.params.date);
+  res.json({ date, ...(date === todayStr() ? ensurePrompts(date) : promptsFor(date)) });
+});
+
+journalRouter.put("/prompts/:date/:kind", (req, res) => {
+  const date = dateParam(req.params.date);
+  const kind = kindParam(req.params.kind);
+  const row = promptsFor(date)[kind];
+  if (!row) throw new HttpError(404, "No prompt for that day");
+  const values = pick(req.body, { answer: "text", revealed: "bool" });
+  if ("recalled" in (req.body ?? {})) {
+    const r = req.body.recalled;
+    if (r !== null && ![0, 1, 2].includes(r)) throw new HttpError(400, "recalled must be 0, 1, 2 or null");
+    values.recalled = r;
+  }
+  res.json(updateRow("journal_prompts", row.id, values));
+});
+
+journalRouter.post("/prompts/:date/:kind/shuffle", (req, res) => {
+  const date = dateParam(req.params.date);
+  if (date !== todayStr()) throw new HttpError(400, "Only today's prompts can be swapped.");
+  const kind = kindParam(req.params.kind);
+  if (promptsFor(date)[kind]?.answer?.trim()) throw new HttpError(400, "You've already answered this one.");
+  res.json(shufflePrompt(date, kind));
 });

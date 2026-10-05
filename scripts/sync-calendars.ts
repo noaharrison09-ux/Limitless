@@ -6,6 +6,9 @@
  * built site as sync/data.json. The site is public, but without the passphrase that file is
  * unreadable. The app on your phone unlocks it with the same passphrase and imports it.
  *
+ * Uses only Node's built-in modules, so the workflow can run it without installing any
+ * packages: no outside code ever runs alongside your calendar links.
+ *
  * Usage: node scripts/sync-calendars.ts <outDir>
  * Env:   SYNC_PASSPHRASE     the passphrase you also type into the app (required)
  *        SCHOOLOGY_ICAL_URL  calendar link(s) imported as homework (one per line)
@@ -40,12 +43,24 @@ export type SyncFile = {
   data: string;
 };
 
+/**
+ * The locked file's size is public, so the contents are padded with spaces (which JSON ignores)
+ * up to the next power of two, at least 64 KiB. That way the size doesn't hint at how much is
+ * on your calendar.
+ */
+export function padded(json: string): Buffer {
+  const bytes = Buffer.from(json, "utf8");
+  let size = 64 * 1024;
+  while (size < bytes.length) size *= 2;
+  return Buffer.concat([bytes, Buffer.alloc(size - bytes.length, " ")]);
+}
+
 export function encryptPayload(payload: SyncPayload, passphrase: string, iterations = ITERATIONS): SyncFile {
   const salt = randomBytes(16);
   const iv = randomBytes(12);
   const key = pbkdf2Sync(passphrase, salt, iterations, 32, "sha256");
   const cipher = createCipheriv("aes-256-gcm", key, iv);
-  const data = Buffer.concat([cipher.update(JSON.stringify(payload), "utf8"), cipher.final(), cipher.getAuthTag()]);
+  const data = Buffer.concat([cipher.update(padded(JSON.stringify(payload))), cipher.final(), cipher.getAuthTag()]);
   return {
     v: 1,
     syncedAt: payload.syncedAt,
