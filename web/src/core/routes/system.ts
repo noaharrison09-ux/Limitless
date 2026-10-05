@@ -123,6 +123,8 @@ systemRouter.post("/restore", (req, res) => {
     if (settings?.prefs) save("prefs", { ...load("prefs"), ...settings.prefs });
     if (settings?.bulk) save("bulk", { ...load("bulk"), ...settings.bulk });
     if (settings?.reminders) save("reminders", { ...load("reminders"), ...settings.reminders });
+    // Synced calendars are fetched again on the next check rather than taken from the backup.
+    patch("sync", { appliedSyncedAt: null });
   });
   res.json({ ok: true, counts });
 });

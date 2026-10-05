@@ -6,6 +6,7 @@ import { homeworkRouter } from "./routes/homework.ts";
 import { notesRouter, projectsRouter } from "./routes/projects.ts";
 import { calendarRouter } from "./routes/calendar.ts";
 import { systemRouter } from "./routes/system.ts";
+import { syncRouter } from "./routes/sync.ts";
 import { dashboardRouter } from "./routes/dashboard.ts";
 
 /** All of the app's "API" routes, run in-page against the on-device database. */
@@ -19,6 +20,7 @@ export function createApp() {
   app.use("/projects", projectsRouter);
   app.use("/notes", notesRouter);
   app.use("/calendar", calendarRouter);
+  app.use("/sync", syncRouter);
   app.use(systemRouter);
   return app;
 }

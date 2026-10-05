@@ -3,6 +3,8 @@ import { api, errorMessage, refreshAll, toast } from "../lib/api";
 import { useApi } from "../lib/hooks";
 import { isIos, isStandalone, readFileText, shareOrDownload } from "../lib/device";
 import { storageIsPersistent } from "../lib/localApi";
+import { ago } from "../lib/dates";
+import { STALE_AFTER_MS, runSync, type SyncStatus } from "../lib/sync";
 import type { Settings } from "../lib/types";
 import { Icon } from "../components/Icon";
 import { PhoneCalendarButton } from "../components/PhoneCalendar";
@@ -38,6 +40,185 @@ function ProfileCard({ s, onSaved }: { s: Settings; onSaved: () => void }) {
           </select>
         </Field>
       </div>
+    </Card>
+  );
+}
+
+/* ---------- Calendar sync (Apple Calendar + Schoology, through GitHub) ---------- */
+
+/** github.com/<you>/<repo> when the app is running on GitHub Pages. */
+function repoUrl(): string | null {
+  const user = location.hostname.match(/^([^.]+)\.github\.io$/i)?.[1];
+  const repo = location.pathname.split("/").filter(Boolean)[0];
+  return user && repo ? `https://github.com/${user}/${repo}` : null;
+}
+
+function SyncCard() {
+  const { data: s, setData, reload } = useApi<SyncStatus>("/sync/status");
+  const [editing, setEditing] = useState(false);
+  const [passphrase, setPassphrase] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const repo = repoUrl();
+
+  const syncNow = async (force: boolean) => {
+    setBusy(true);
+    setError(null);
+    try {
+      const next = await runSync(force);
+      setData(next);
+      if (next.lastError) setError(next.lastError);
+      else toast(next.changed ? "Calendars updated" : "Already up to date");
+    } catch (err) {
+      setError(errorMessage(err));
+      void reload();
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const savePassphrase = async (value: string) => {
+    setError(null);
+    try {
+      setData(await api.put<SyncStatus>("/sync/settings", { passphrase: value }));
+      setEditing(false);
+      setPassphrase("");
+      if (value) await syncNow(true);
+      else toast("Calendar sync turned off");
+    } catch (err) {
+      setError(errorMessage(err));
+    }
+  };
+
+  if (!s) return null;
+  const showForm = !s.configured || editing;
+  const stale = s.appliedSyncedAt && Date.now() - new Date(s.appliedSyncedAt).getTime() > STALE_AFTER_MS;
+  const link = (path: string, text: string) =>
+    repo ? (
+      <a href={`${repo}${path}`} target="_blank" rel="noreferrer">
+        {text}
+      </a>
+    ) : (
+      <strong>{text}</strong>
+    );
+
+  return (
+    <Card title="Calendar sync" eyebrow="Apple Calendar & Schoology">
+      <p className="small" style={{ margin: "0 0 10px", color: "var(--ink-2)" }}>
+        Keeps your calendar and homework up to date by itself. Every 3 hours GitHub downloads your calendars, locks them with your passphrase, and
+        Limitless unlocks them when you open it.
+      </p>
+
+      {s.configured && (
+        <div className="sync-status">
+          <Icon name="refresh" size={18} />
+          <div style={{ minWidth: 0 }}>
+            <strong>{s.appliedSyncedAt ? `Updated ${ago(s.appliedSyncedAt)}` : "Waiting for the first sync"}</strong>
+            {s.counts && (
+              <div className="small muted">
+                {s.counts.events} events · {s.counts.homework} assignments
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      {stale && (
+        <div className="notice warn" style={{ marginTop: 10 }}>
+          Nothing new from GitHub in over a day. GitHub pauses schedules on repos with no changes for 60 days: open {link("/actions", "Actions")} →{" "}
+          <strong>Deploy to GitHub Pages</strong> and tap <strong>Enable workflow</strong> or <strong>Run workflow</strong>.
+        </div>
+      )}
+      {s.sourceErrors.length > 0 && (
+        <div className="notice warn" style={{ marginTop: 10 }}>
+          {s.sourceErrors.map((e) => (
+            <div key={e.source}>
+              <strong>{e.source}:</strong> {e.message}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {showForm ? (
+        <form
+          className="form"
+          style={{ marginTop: 12 }}
+          onSubmit={(e) => {
+            e.preventDefault();
+            void savePassphrase(passphrase);
+          }}
+        >
+          <Field label="Sync passphrase" hint="the same as SYNC_PASSPHRASE on GitHub">
+            <input
+              className="input"
+              type="password"
+              autoComplete="off"
+              autoCapitalize="none"
+              autoCorrect="off"
+              spellCheck={false}
+              value={passphrase}
+              onChange={(e) => setPassphrase(e.target.value)}
+              placeholder="four or more random words"
+            />
+          </Field>
+          <div className="btn-row">
+            <button className="btn primary" disabled={!passphrase.trim() || busy}>
+              {busy ? "Syncing…" : "Save and sync"}
+            </button>
+            {editing && (
+              <button type="button" className="btn" onClick={() => setEditing(false)}>
+                Cancel
+              </button>
+            )}
+          </div>
+          {editing && (
+            <button type="button" className="btn ghost block" onClick={() => confirm("Turn off calendar sync on this phone?") && savePassphrase("")}>
+              Turn off sync
+            </button>
+          )}
+        </form>
+      ) : (
+        <div className="btn-row" style={{ marginTop: 12 }}>
+          <button className="btn primary" disabled={busy} onClick={() => syncNow(true)}>
+            <Icon name="refresh" size={17} /> {busy ? "Syncing…" : "Sync now"}
+          </button>
+          <button className="btn" onClick={() => setEditing(true)}>
+            Change passphrase
+          </button>
+        </div>
+      )}
+      <ErrorBox error={error} />
+
+      <details className="help" style={{ marginTop: 12 }} open={!s.configured}>
+        <summary>How to set it up (once)</summary>
+        <ol>
+          <li>
+            Make up a passphrase: four or more random words, at least 16 characters. You'll type it in two places, GitHub and here.
+          </li>
+          <li>
+            <strong>Apple Calendar link:</strong> on your iPhone open <strong>Calendar</strong> → <strong>Calendars</strong> → tap ⓘ next to your
+            calendar → turn on <strong>Public Calendar</strong> → <strong>Share Link</strong> → <strong>Copy</strong>. Only paste it into GitHub:
+            anyone who has the link can see that calendar.
+          </li>
+          <li>
+            <strong>Schoology link:</strong> in Schoology open <strong>Calendar</strong>, tap <strong>iCal</strong> / <strong>Export</strong>, and copy
+            the link.
+          </li>
+          <li>
+            On GitHub open {link("/settings/secrets/actions", "Settings → Secrets and variables → Actions")} and add three{" "}
+            <strong>repository secrets</strong>: <code>SYNC_PASSPHRASE</code>, <code>CALENDAR_ICAL_URL</code> (the Apple link) and{" "}
+            <code>SCHOOLOGY_ICAL_URL</code>. More than one calendar? Put each link on its own line.
+          </li>
+          <li>
+            Open {link("/actions/workflows/deploy-pages.yml", "Actions → Deploy to GitHub Pages")}, tap <strong>Run workflow</strong>, and wait about
+            two minutes.
+          </li>
+          <li>Type the passphrase above and tap Save and sync.</li>
+        </ol>
+        <p className="small muted">
+          Secrets stay hidden on GitHub, and the file it publishes is locked with your passphrase. Your journal, weight and everything else never leave
+          this phone.
+        </p>
+      </details>
     </Card>
   );
 }
@@ -200,6 +381,7 @@ export function SettingsPage() {
         ) : (
           <>
             <ProfileCard s={data} onSaved={reload} />
+            <SyncCard />
             <RemindersCard s={data} onSaved={reload} />
             <DataCard />
           </>

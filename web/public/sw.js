@@ -1,9 +1,10 @@
 /*
  * Limitless service worker: makes the app open instantly and work offline, including from the
  * Home Screen. Paths are relative to wherever the app is hosted (e.g. /Limitless/ on GitHub Pages).
- * Your data isn't here: it lives in the app's on-device database (IndexedDB).
+ * Your data isn't here: it lives in the app's on-device database (IndexedDB). Synced calendars
+ * (sync/data.json) are never cached here.
  */
-const CACHE = "limitless-v3";
+const CACHE = "limitless-v4";
 const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png"];
 
 const scoped = (path) => new URL(path, self.registration.scope).href;
@@ -31,6 +32,8 @@ self.addEventListener("fetch", (event) => {
   if (req.method !== "GET") return;
   const url = new URL(req.url);
   if (url.origin !== self.location.origin || !req.url.startsWith(self.registration.scope)) return;
+  // Synced calendars must always come fresh from GitHub, never from the cache.
+  if (url.pathname.includes("/sync/")) return;
 
   // The page itself: try the network for updates, fall back to the saved copy offline.
   if (req.mode === "navigate") {

@@ -3,6 +3,6 @@
   "compilerOptions": {
     "types": ["vite/client", "node"]
   },
-  "include": ["web/src/core/**/*.ts", "vite.config.ts", "vitest.config.ts"],
+  "include": ["web/src/core/**/*.ts", "scripts/**/*.ts", "vite.config.ts", "vitest.config.ts"],
   "exclude": []
 }

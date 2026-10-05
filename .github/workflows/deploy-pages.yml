@@ -1,11 +1,20 @@
-# Builds Limitless and publishes it to GitHub Pages on every push to main.
+# Builds Limitless and publishes it to GitHub Pages.
 # One-time setup: repo Settings -> Pages -> Build and deployment -> Source: "GitHub Actions".
+#
+# Calendar auto-sync (optional): add these in Settings -> Secrets and variables -> Actions:
+#   SYNC_PASSPHRASE     a passphrase you make up (type the same one into the app)
+#   CALENDAR_ICAL_URL   your Apple Calendar public link (one per line for several)
+#   SCHOOLOGY_ICAL_URL  your Schoology calendar link (imported as homework)
+# Every run then fetches those calendars, locks them with the passphrase, and publishes the
+# locked file next to the app. The schedule below refreshes them every 3 hours.
 name: Deploy to GitHub Pages
 
 on:
   push:
     branches: [main]
   workflow_dispatch:
+  schedule:
+    - cron: "17 */3 * * *"
 
 permissions:
   contents: read
@@ -33,6 +42,13 @@ jobs:
       - run: npm test
       - run: npm run build
 
+      - name: Sync calendars
+        run: node scripts/sync-calendars.ts dist
+        env:
+          SYNC_PASSPHRASE: ${{ secrets.SYNC_PASSPHRASE }}
+          CALENDAR_ICAL_URL: ${{ secrets.CALENDAR_ICAL_URL }}
+          SCHOOLOGY_ICAL_URL: ${{ secrets.SCHOOLOGY_ICAL_URL }}
+
       - uses: actions/configure-pages@v5
 
       - uses: actions/upload-pages-artifact@v3
@@ -41,6 +57,9 @@ jobs:
 
   deploy:
     needs: build
+    # GitHub Pages only accepts deployments from the repo's default branch. Scheduled runs
+    # always use the default branch (and their event doesn't say which branch that is).
+    if: github.event_name == 'schedule' || github.ref_name == github.event.repository.default_branch
     runs-on: ubuntu-latest
     environment:
       name: github-pages

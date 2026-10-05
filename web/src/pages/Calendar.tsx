@@ -2,11 +2,12 @@ import { useMemo, useState, type FormEvent } from "react";
 import { Link } from "react-router-dom";
 import { api, errorMessage, refreshAll, toast } from "../lib/api";
 import { useApi } from "../lib/hooks";
-import { addDays, dateStr, fmtDay, fmtTime, parseDate, todayStr } from "../lib/dates";
+import { addDays, ago, dateStr, fmtDay, fmtTime, parseDate, todayStr } from "../lib/dates";
 import type { CalEvent, Homework } from "../lib/types";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Fab, Field, Segmented, Sheet, TopBar } from "../components/ui";
 import { PhoneCalendarButton } from "../components/PhoneCalendar";
+import type { SyncStatus } from "../lib/sync";
 
 type Range = { events: CalEvent[]; homework: Pick<Homework, "id" | "title" | "course" | "due_at" | "all_day" | "status">[] };
 
@@ -77,7 +78,39 @@ function ItemRow({ item, onOpen }: { item: Item; onOpen: (ev: CalEvent) => void 
   );
 }
 
+/** Events from your synced calendar: change them in Apple Calendar, and they update here on the next sync. */
+function SyncedEventSheet({ event, onClose }: { event: CalEvent; onClose: () => void }) {
+  const day = fmtDay(dateStr(new Date(event.start)), { long: true });
+  const when = event.all_day ? `${day} · All day` : `${day} · ${fmtTime(event.start)}${event.end ? ` – ${fmtTime(event.end)}` : ""}`;
+  return (
+    <Sheet title={event.title} onClose={onClose}>
+      <div className="form">
+        <div>
+          <strong>{when}</strong>
+          {event.location && <div className="small muted">{event.location}</div>}
+        </div>
+        {event.description && (
+          <p className="small" style={{ margin: 0, whiteSpace: "pre-wrap", color: "var(--ink-2)" }}>
+            {event.description}
+          </p>
+        )}
+        {event.url && /^https?:\/\//i.test(event.url) && (
+          <a className="btn block" href={event.url} target="_blank" rel="noreferrer">
+            <Icon name="external" size={17} /> Open link
+          </a>
+        )}
+        <div className="notice">From your synced calendar. Change it in Apple Calendar and it updates here on the next sync.</div>
+      </div>
+    </Sheet>
+  );
+}
+
 export function EventSheet({ initialDate, event, onClose }: { initialDate: string; event?: CalEvent; onClose: () => void }) {
+  if (event?.source === "sync") return <SyncedEventSheet event={event} onClose={onClose} />;
+  return <EditEventSheet initialDate={initialDate} event={event} onClose={onClose} />;
+}
+
+function EditEventSheet({ initialDate, event, onClose }: { initialDate: string; event?: CalEvent; onClose: () => void }) {
   const [title, setTitle] = useState(event?.title ?? "");
   const [date, setDate] = useState(event ? dateStr(new Date(event.start)) : initialDate);
   const [start, setStart] = useState(event && !event.all_day ? new Date(event.start).toTimeString().slice(0, 5) : "");
@@ -145,6 +178,19 @@ export function EventSheet({ initialDate, event, onClose }: { initialDate: strin
   );
 }
 
+/** "Synced 2h ago" when calendar sync is on; tapping it opens the sync settings. */
+function SyncLine() {
+  const { data } = useApi<SyncStatus>("/sync/status");
+  if (!data?.configured) return null;
+  const trouble = data.lastError || data.sourceErrors.length > 0;
+  return (
+    <Link to="/settings" className={`sync-line${trouble ? " trouble" : ""}`}>
+      <Icon name="refresh" size={14} />
+      {trouble ? "Calendar sync needs a look" : data.appliedSyncedAt ? `Synced ${ago(data.appliedSyncedAt)}` : "Waiting for the first sync"}
+    </Link>
+  );
+}
+
 export function CalendarPage() {
   const today = todayStr();
   const [view, setView] = useState<"month" | "agenda">("month");
@@ -188,6 +234,7 @@ export function CalendarPage() {
           ]}
         />
         <ErrorBox error={error} />
+        <SyncLine />
 
         {view === "month" ? (
           <>

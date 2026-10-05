@@ -31,6 +31,18 @@ export type ReminderSettings = {
   events: { enabled: boolean; minutesBefore: number };
 };
 
+/** Calendar auto-sync on this device. Never included in backups (the passphrase stays here). */
+export type SyncState = {
+  passphrase: string;
+  /** When GitHub made the file that was last imported, so the same file isn't imported twice. */
+  appliedSyncedAt: string | null;
+  lastCheckedAt: string | null;
+  lastError: string | null;
+  counts: { homework: number; events: number } | null;
+  /** Calendars GitHub couldn't download or the app couldn't read last time. */
+  sourceErrors: { source: string; message: string }[];
+};
+
 export const defaults = {
   prefs: { name: "", timezone: "", units: "lb" } as Prefs,
   bulk: {
@@ -49,6 +61,14 @@ export const defaults = {
     homeworkDueSoon: { enabled: true, hours: 3 },
     events: { enabled: true, minutesBefore: 30 },
   } as ReminderSettings,
+  sync: {
+    passphrase: "",
+    appliedSyncedAt: null,
+    lastCheckedAt: null,
+    lastError: null,
+    counts: null,
+    sourceErrors: [],
+  } as SyncState,
 };
 
 type Defaults = typeof defaults;

@@ -37,6 +37,12 @@ export function ImportPage() {
     <>
       <TopBar title="Import calendar" back />
       <div className="page">
+        <Link to="/settings" className="notice" style={{ display: "flex", gap: 10, alignItems: "center", textDecoration: "none" }}>
+          <Icon name="refresh" size={18} />
+          <span>
+            <strong>Tired of importing?</strong> Turn on Calendar sync in Settings and your Apple Calendar and Schoology update by themselves.
+          </span>
+        </Link>
         <Card eyebrow="From a calendar file (.ics)" title="Bring in homework or events">
           <p className="small" style={{ margin: "0 0 12px", color: "var(--ink-2)" }}>
             Pick a calendar file saved on your phone. Importing the same file again later updates what's here without making duplicates, and

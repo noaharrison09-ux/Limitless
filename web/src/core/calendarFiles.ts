@@ -84,13 +84,16 @@ export function importHomework(text: string, now = Date.now()): ImportResult {
   return result;
 }
 
-/** Adds calendar-file events (repeating ones expanded), updating any imported before. */
-export function importEvents(text: string, now = Date.now()): ImportResult {
+/**
+ * Adds calendar-file events (repeating ones expanded), updating any imported before.
+ * `source` is "import" for files you pick and "sync" for calendars synced automatically.
+ */
+export function importEvents(text: string, now = Date.now(), source: "import" | "sync" = "import"): ImportResult {
   const events = parseIcs(text, new Date(now - 30 * DAY), new Date(now + 365 * DAY), zone());
   const result: ImportResult = { added: 0, updated: 0 };
   tx(() => {
     for (const ev of events) {
-      const existing = get<{ id: number }>("SELECT id FROM events WHERE source = 'import' AND uid = ? AND start = ?", ev.uid, ev.start);
+      const existing = get<{ id: number }>("SELECT id FROM events WHERE source = ? AND uid = ? AND start = ?", source, ev.uid, ev.start);
       if (existing) {
         run(
           'UPDATE events SET title = ?, "end" = ?, all_day = ?, location = ?, description = ?, url = ? WHERE id = ?',
@@ -106,7 +109,8 @@ export function importEvents(text: string, now = Date.now()): ImportResult {
       } else {
         run(
           `INSERT INTO events (source, uid, title, start, "end", all_day, location, description, url)
-           VALUES ('import', ?, ?, ?, ?, ?, ?, ?, ?)`,
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+          source,
           ev.uid,
           ev.title,
           ev.start,

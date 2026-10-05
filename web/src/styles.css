@@ -601,6 +601,42 @@ textarea.input {
   border: 1px solid var(--line);
 }
 
+.notice.warn {
+  background: var(--warn-wash);
+  color: var(--warn);
+  border-color: color-mix(in srgb, var(--warn) 25%, transparent);
+}
+
+.sync-status {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-radius: 12px;
+  background: var(--silver-wash);
+  border: 1px solid var(--line);
+}
+
+.sync-status > svg {
+  flex: none;
+  color: var(--steel-2);
+}
+
+.sync-line {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 10px 0 0 4px;
+  font-size: 13px;
+  color: var(--ink-3);
+  text-decoration: none;
+}
+
+.sync-line.trouble {
+  color: var(--warn);
+  font-weight: 600;
+}
+
 /* Checkbox */
 .check {
   appearance: none;
