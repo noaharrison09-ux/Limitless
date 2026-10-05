@@ -180,7 +180,7 @@ export function HomeworkPage() {
         {courses.length > 1 && (
           <div style={{ display: "flex", gap: 6, overflowX: "auto", paddingBottom: 2 }}>
             {["all", ...courses].map((c) => (
-              <button key={c} className={`chip${course === c ? " wood" : ""}`} style={{ border: 0, cursor: "pointer", padding: "6px 12px" }} onClick={() => setCourse(c)}>
+              <button key={c} className={`chip${course === c ? " metal" : ""}`} style={{ border: 0, cursor: "pointer", padding: "6px 12px" }} onClick={() => setCourse(c)}>
                 {c === "all" ? "All classes" : c}
               </button>
             ))}

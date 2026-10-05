@@ -57,7 +57,7 @@ Fill in:
 - important: whether to notify them.
 - reason: a few words on why (e.g. "Teacher, test date change").
 - summary: one plain sentence (under 140 characters) saying what the email says or asks.
-- event: only if the email is important AND names a specific date for something they should put on their calendar (a test, deadline, practice, meeting, appointment). Use date format YYYY-MM-DD and 24h time HH:MM (null if no time). Resolve relative dates like "this Friday" using today's date. Otherwise null.`;
+- event: fill this in whenever the email is about a specific upcoming appointment or event they would put on a calendar (a doctor or dentist appointment, booking or reservation, interview, meeting, test, practice, game, deadline), even if the email isn't important. Title it the way they'd want to see it on their calendar (e.g. "Dentist – Bright Smiles"). Use date format YYYY-MM-DD and 24h time HH:MM (null if no time). Resolve relative dates like "this Friday" using today's date. Use null for marketing, past events, or emails with no specific date.`;
 
 export async function screenWithAi(email: EmailForScreening, criteria: string): Promise<ScreeningResult | null> {
   const apiKey = aiApiKey();

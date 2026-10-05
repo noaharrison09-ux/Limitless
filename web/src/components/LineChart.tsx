@@ -114,7 +114,7 @@ export function LineChart({ points = [], line, lineLabel, pointsLabel, goal, uni
           ))}
           {goal && goal > 0 && (
             <g>
-              <line x1={PAD.left} x2={width - PAD.right} y1={y(goal)} y2={y(goal)} stroke="var(--oak)" strokeWidth={1} />
+              <line x1={PAD.left} x2={width - PAD.right} y1={y(goal)} y2={y(goal)} stroke="var(--silver)" strokeWidth={1} />
               <text x={width - PAD.right + 4} y={y(goal) + 4} fontSize={11} fill="var(--ink-2)">
                 Goal
               </text>
@@ -182,7 +182,7 @@ export function LineChart({ points = [], line, lineLabel, pointsLabel, goal, uni
           {goal ? (
             <span>
               <svg width="18" height="8" aria-hidden="true">
-                <line x1="1" x2="17" y1="4" y2="4" stroke="var(--oak)" strokeWidth="1" />
+                <line x1="1" x2="17" y1="4" y2="4" stroke="var(--silver)" strokeWidth="1" />
               </svg>
               Goal {fmtNum(goal)}
             </span>

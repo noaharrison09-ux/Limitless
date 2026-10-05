@@ -218,6 +218,7 @@ CREATE TABLE IF NOT EXISTS important_emails (
   received_at TEXT,
   reason TEXT,
   summary TEXT,
+  body TEXT,
   read INTEGER NOT NULL DEFAULT 0,
   created_at TEXT NOT NULL DEFAULT (strftime('%Y-%m-%dT%H:%M:%fZ', 'now')),
   UNIQUE (account_id, message_id)
@@ -250,7 +251,17 @@ export function openDb(file: string): DatabaseSync {
   db = new DatabaseSync(file);
   db.exec("PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON; PRAGMA busy_timeout = 5000;");
   db.exec(SCHEMA);
+  migrate(db);
   return db;
+}
+
+/** Adds columns introduced after a database was first created. */
+function migrate(d: DatabaseSync) {
+  const add = (table: string, column: string, type: string) => {
+    const cols = d.prepare(`PRAGMA table_info(${table})`).all() as { name: string }[];
+    if (!cols.some((c) => c.name === column)) d.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${type}`);
+  };
+  add("important_emails", "body", "TEXT");
 }
 
 export function getDb(): DatabaseSync {

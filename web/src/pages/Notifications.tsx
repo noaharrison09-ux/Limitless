@@ -31,7 +31,7 @@ export function NotificationsPage() {
         ) : (
           <section className="card flush">
             {data.items.map((n) => (
-              <Link key={n.id} to={n.url ?? "/"} className="row" style={!n.read ? { background: "var(--oak-wash)" } : undefined}>
+              <Link key={n.id} to={n.url ?? "/"} className="row" style={!n.read ? { background: "var(--silver-wash)" } : undefined}>
                 <div className="row-main">
                   <div className="row-title">{n.title}</div>
                   {n.body && <div className="row-sub">{n.body}</div>}

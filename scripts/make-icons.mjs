@@ -1,4 +1,4 @@
-// Renders the app icons (walnut wood tile + cream infinity mark) to web/public/icons.
+// Renders the app icons (brushed dark-silver tile + polished silver infinity mark) to web/public/icons.
 // Usage: node scripts/make-icons.mjs   (needs Playwright + Chromium available)
 import { createRequire } from "node:module";
 import path from "node:path";
@@ -26,19 +26,19 @@ function svg({ size, pad = 0, badge = false }) {
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 ${size} ${size}">
   <defs>
     <linearGradient id="base" x1="0" y1="0" x2="0.3" y2="1">
-      <stop offset="0" stop-color="#875430"/><stop offset="0.55" stop-color="#653c1c"/><stop offset="1" stop-color="#4b2c13"/>
+      <stop offset="0" stop-color="#62686f"/><stop offset="0.5" stop-color="#3b4046"/><stop offset="1" stop-color="#22262b"/>
     </linearGradient>
     <filter id="grain" x="0" y="0" width="100%" height="100%">
-      <feTurbulence type="fractalNoise" baseFrequency="${0.004 / (size / 512)} ${0.12 / (size / 512)}" numOctaves="4" seed="11"/>
-      <feColorMatrix values="0 0 0 0 0.16  0 0 0 0 0.08  0 0 0 0 0.03  1.7 0 0 0 -0.66"/>
+      <feTurbulence type="fractalNoise" baseFrequency="${0.0025 / (size / 512)} ${0.9 / (size / 512)}" numOctaves="2" seed="4"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0.5 0 0 0 -0.2"/>
     </filter>
     <linearGradient id="sheen" x1="0" y1="0" x2="1" y2="1">
-      <stop offset="0" stop-color="#fff1d8" stop-opacity="0.22"/><stop offset="0.5" stop-color="#fff1d8" stop-opacity="0"/>
+      <stop offset="0.15" stop-color="#ffffff" stop-opacity="0"/><stop offset="0.38" stop-color="#ffffff" stop-opacity="0.16"/><stop offset="0.6" stop-color="#ffffff" stop-opacity="0"/>
     </linearGradient>
     <linearGradient id="mark" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#fffaf1"/><stop offset="1" stop-color="#ead6b8"/>
+      <stop offset="0" stop-color="#ffffff"/><stop offset="0.45" stop-color="#dfe3e8"/><stop offset="0.55" stop-color="#b7bec7"/><stop offset="1" stop-color="#e9ecf0"/>
     </linearGradient>
-    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="${6 * s}" stdDeviation="${8 * s}" flood-color="#1f1006" flood-opacity="0.45"/></filter>
+    <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%"><feDropShadow dx="0" dy="${6 * s}" stdDeviation="${8 * s}" flood-color="#06080a" flood-opacity="0.55"/></filter>
   </defs>
   <rect width="${size}" height="${size}" fill="url(#base)"/>
   <rect width="${size}" height="${size}" filter="url(#grain)"/>

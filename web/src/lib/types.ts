@@ -61,6 +61,7 @@ export type ImportantEmail = {
   account_label?: string;
   account_host?: string;
   message_id?: string;
+  appointment_count?: number;
 };
 
 export type Project = {

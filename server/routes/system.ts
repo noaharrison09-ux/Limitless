@@ -143,7 +143,7 @@ systemRouter.post("/push/unsubscribe", (req, res) => {
 });
 
 systemRouter.post("/push/test", async (_req, res) => {
-  const result = await notify({ title: "🪵 Limitless is connected", body: "Notifications are working on this device.", url: "/settings" });
+  const result = await notify({ title: "✨ Limitless is connected", body: "Notifications are working on this device.", url: "/settings" });
   res.json(result);
 });
 

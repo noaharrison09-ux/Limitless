@@ -18,6 +18,7 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.131.0",
+    "chrono-node": "^2.10.2",
     "express": "^5.2.1",
     "ical.js": "^2.2.1",
     "imapflow": "^2.2.5",

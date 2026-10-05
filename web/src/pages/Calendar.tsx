@@ -50,7 +50,7 @@ function ItemRow({ item, onOpen }: { item: Item; onOpen: (ev: CalEvent) => void 
     return (
       <Link to="/homework" className="row">
         <div className="time-col">{h.all_day || !h.due_at ? "Due" : fmtTime(h.due_at)}</div>
-        <span className="event-bar" style={{ background: "var(--oak)" }} />
+        <span className="event-bar" style={{ background: "var(--silver)" }} />
         <div className="row-main">
           <div className={`row-title${h.status === "done" ? " done" : ""}`}>{h.title}</div>
           <div className="row-sub">
@@ -65,7 +65,7 @@ function ItemRow({ item, onOpen }: { item: Item; onOpen: (ev: CalEvent) => void 
   return (
     <button className="row" onClick={() => onOpen(e)} style={{ cursor: "pointer" }}>
       <div className="time-col">{e.all_day || multiDayContinuation ? "All day" : fmtTime(e.start)}</div>
-      <span className="event-bar" style={{ background: e.color ?? "var(--walnut-2)" }} />
+      <span className="event-bar" style={{ background: e.color ?? "var(--steel-2)" }} />
       <div className="row-main">
         <div className="row-title">{e.title}</div>
         <div className="row-sub">
@@ -76,7 +76,7 @@ function ItemRow({ item, onOpen }: { item: Item; onOpen: (ev: CalEvent) => void 
   );
 }
 
-function EventSheet({ initialDate, event, onClose }: { initialDate: string; event?: CalEvent; onClose: () => void }) {
+export function EventSheet({ initialDate, event, onClose }: { initialDate: string; event?: CalEvent; onClose: () => void }) {
   const [title, setTitle] = useState(event?.title ?? "");
   const [date, setDate] = useState(event ? dateStr(new Date(event.start)) : initialDate);
   const [start, setStart] = useState(event && !event.all_day ? new Date(event.start).toTimeString().slice(0, 5) : "");
@@ -198,7 +198,7 @@ export function CalendarPage() {
       />
       <div className="page">
         {pending > 0 && (
-          <Link to="/approvals" className="card wood-edge" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: 10 }}>
+          <Link to="/approvals" className="card accent-edge" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: 10 }}>
             <div className="row-main">
               <strong>{pending} waiting for your approval</strong>
               <div className="small muted">Nothing is added to your calendar until you say so.</div>

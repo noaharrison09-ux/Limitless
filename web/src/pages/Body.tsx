@@ -306,7 +306,7 @@ function LiftsTab({ s, reload }: { s: Summary; reload: () => void }) {
         <>
           <section className="card flush">
             {s.prs.map((p) => (
-              <button key={p.exercise} className="row" onClick={() => setSelected(p.exercise)} style={{ cursor: "pointer", background: selected === p.exercise ? "var(--oak-wash)" : undefined }}>
+              <button key={p.exercise} className="row" onClick={() => setSelected(p.exercise)} style={{ cursor: "pointer", background: selected === p.exercise ? "var(--silver-wash)" : undefined }}>
                 <div className="row-main">
                   <div className="row-title">{p.exercise}</div>
                   <div className="row-sub">

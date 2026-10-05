@@ -94,7 +94,7 @@ function JournalEditor({ day, onSaved }: { day: Day; onSaved: (d: Day) => void }
         </div>
       </Card>
 
-      <Card eyebrow={`For ${fmtDay(addDays(day.date, 1)).toLowerCase()}`} title="Non-negotiables" className="wood-edge">
+      <Card eyebrow={`For ${fmtDay(addDays(day.date, 1)).toLowerCase()}`} title="Non-negotiables" className="accent-edge">
         <p className="small muted" style={{ margin: "-4px 0 10px" }}>
           The things that happen no matter what. You'll see them in tomorrow's morning briefing.
         </p>
@@ -143,7 +143,7 @@ export function JournalPage() {
         title="Journal"
         right={
           history?.streak ? (
-            <span className="chip wood">
+            <span className="chip metal">
               <Icon name="flame" size={14} /> {history.streak}
             </span>
           ) : undefined

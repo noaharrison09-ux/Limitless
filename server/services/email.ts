@@ -1,12 +1,18 @@
 import { ImapFlow } from "imapflow";
 import { simpleParser } from "mailparser";
 import { DateTime } from "luxon";
-import { all, get, run } from "../db.ts";
+import { all, get, run, tx } from "../db.ts";
 import { decrypt } from "../crypto.ts";
 import { load } from "../settings.ts";
 import { zone } from "../time.ts";
 import { aiAvailable, screenWithAi, type ScreeningResult } from "./ai.ts";
-import { announcePending } from "./approvals.ts";
+import {
+  appointmentFromAi,
+  appointmentFromText,
+  appointmentSignals,
+  appointmentsFromInvites,
+  type FoundAppointment,
+} from "./appointments.ts";
 import { notify } from "./push.ts";
 
 export type RuleField = "from" | "subject" | "body" | "any" | "gmail_important" | "block";
@@ -105,13 +111,86 @@ export async function testConnection(a: Pick<Account, "host" | "port" | "secure"
 }
 
 const MAX_PER_POLL = 40;
-const SOURCE_BYTES = 96 * 1024;
+const SOURCE_BYTES = 256 * 1024;
 
 function snippet(text: string): string {
   return text.replace(/\s+/g, " ").trim().slice(0, 280);
 }
 
-async function handleMessage(account: Account, raw: Buffer, labels: string[], internalDate: Date | null, rules: Rule[]) {
+function when(a: FoundAppointment): string {
+  const d = DateTime.fromISO(a.start).setZone(zone());
+  return a.allDay ? d.toFormat("ccc, LLL d") : d.toFormat("ccc, LLL d · h:mm a");
+}
+
+/**
+ * Saves appointments found in an email as calendar events (pending approval unless you
+ * auto-approve). Invite updates replace the earlier version; repeats of the same
+ * appointment from the same sender (confirmation, then reminder) are skipped.
+ */
+function saveAppointments(emailId: number, fromAddr: string, found: FoundAppointment[], autoApprove: boolean): FoundAppointment[] {
+  const saved: FoundAppointment[] = [];
+  const status = autoApprove ? "approved" : "pending";
+  tx(() => {
+    const byUid = new Map<string, FoundAppointment[]>();
+    for (const a of found) {
+      if (a.uid) byUid.set(a.uid, [...(byUid.get(a.uid) ?? []), a]);
+    }
+    for (const [uid, list] of byUid) {
+      const prior = get<{ status: string }>("SELECT status FROM events WHERE source = 'email' AND uid = ? LIMIT 1", uid);
+      run("DELETE FROM events WHERE source = 'email' AND uid = ?", uid);
+      for (const a of list) insertAppointment(emailId, a, prior?.status ?? status);
+      if (!prior) saved.push(list[0]);
+    }
+    for (const a of found.filter((x) => !x.uid)) {
+      const dup = get(
+        `SELECT 1 FROM events e JOIN important_emails m ON m.id = e.email_id
+         WHERE e.source = 'email' AND e.start = ? AND lower(m.from_addr) = lower(?)`,
+        a.start,
+        fromAddr,
+      );
+      if (dup) continue;
+      insertAppointment(emailId, a, status);
+      saved.push(a);
+    }
+  });
+  return saved;
+}
+
+function insertAppointment(emailId: number, a: FoundAppointment, status: string) {
+  run(
+    `INSERT INTO events (source, status, email_id, uid, title, start, end, all_day, location)
+     VALUES ('email', ?, ?, ?, ?, ?, ?, ?, ?)`,
+    status,
+    emailId,
+    a.uid,
+    a.title,
+    a.start,
+    a.end,
+    a.allDay,
+    a.location,
+  );
+}
+
+/** Removes appointments whose invite was cancelled; returns their titles. */
+function cancelAppointments(uids: string[]): string[] {
+  const titles: string[] = [];
+  for (const uid of uids) {
+    const ev = get<{ title: string }>("SELECT title FROM events WHERE source = 'email' AND uid = ? LIMIT 1", uid);
+    if (!ev) continue;
+    run("DELETE FROM events WHERE source = 'email' AND uid = ?", uid);
+    titles.push(ev.title);
+  }
+  return titles;
+}
+
+/** Reads one email: applies your rules, finds appointments, saves it, and notifies you. */
+export async function processMessage(
+  account: Pick<Account, "id">,
+  raw: Buffer,
+  labels: string[],
+  internalDate: Date | null,
+  rules: Rule[],
+) {
   const parsed = await simpleParser(raw, { skipImageLinks: true, skipHtmlToText: false });
   const from = parsed.from?.value?.[0];
   const messageId = parsed.messageId ?? `${account.id}:${parsed.date?.toISOString() ?? ""}:${parsed.subject ?? ""}`;
@@ -125,77 +204,98 @@ async function handleMessage(account: Account, raw: Buffer, labels: string[], in
     labels,
     bulk: parsed.headers.has("list-unsubscribe") || /bulk|list/i.test(String(parsed.headers.get("precedence") ?? "")),
   };
+  const received = parsed.date ?? internalDate ?? new Date();
 
   const verdict = applyRules(email, rules);
   if (verdict.blocked) return;
 
   const ai = load("ai");
+  const appt = load("appointments");
+  const signals = appointmentSignals(email.subject, email.text);
   let important = verdict.important;
   let reason = verdict.reason;
   let summary: string | null = null;
-  let event: ScreeningResult["event"] = null;
+  let aiEvent: ScreeningResult["event"] = null;
+  let aiAnswered = false;
 
-  // AI looks at anything your rules didn't already flag (skipping mailing-list blasts to save cost),
-  // and at rule matches too when it can pull out a calendar date.
-  if (aiAvailable() && (important || !email.bulk)) {
+  // AI looks at anything your rules didn't already flag (skipping mailing-list blasts to save cost,
+  // unless the email clearly looks like an appointment).
+  if (aiAvailable() && (important || !email.bulk || (appt.enabled && signals.strong))) {
     const result = await screenWithAi(email, ai.criteria);
     if (result) {
+      aiAnswered = true;
       if (!important && result.important) {
         important = true;
         reason = `AI: ${result.reason}`;
       }
-      if (important) {
-        summary = result.summary;
-        event = result.event;
-      }
+      summary = result.summary;
+      aiEvent = result.event;
     }
   }
-  if (!important) return;
 
-  const receivedAt = (parsed.date ?? internalDate ?? new Date()).toISOString();
+  // Appointments: a calendar invite is exact; otherwise the AI's reading; otherwise the date in the text.
+  let found: FoundAppointment[] = [];
+  let cancelled: string[] = [];
+  if (appt.enabled) {
+    const invites = appointmentsFromInvites(parsed.attachments ?? [], received, zone());
+    cancelled = invites.cancelledUids;
+    found = invites.found;
+    if (!found.length && !cancelled.length) {
+      // If the AI read the email, trust its answer; if it was off or failed, read the date ourselves.
+      const one = aiAnswered ? appointmentFromAi(aiEvent, zone()) : appointmentFromText(email, received, zone());
+      if (one) found = [one];
+    }
+  }
+
+  if (!important && !found.length && !cancelled.length) return;
+
   const { lastId, changes } = run(
-    `INSERT INTO important_emails (account_id, message_id, from_name, from_addr, subject, snippet, received_at, reason, summary)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
+    `INSERT INTO important_emails (account_id, message_id, from_name, from_addr, subject, snippet, received_at, reason, summary, body, read)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT DO NOTHING`,
     account.id,
     messageId,
     email.fromName,
     email.fromAddr,
     email.subject,
     snippet(email.text),
-    receivedAt,
-    reason,
+    received.toISOString(),
+    reason ?? (cancelled.length ? "📅 Cancellation" : "📅 Appointment"),
     summary,
+    email.text,
+    important ? 0 : 1,
   );
   if (!changes) return;
 
-  await notify({
-    title: `📬 ${email.fromName || email.fromAddr}`,
-    body: `${email.subject}${summary ? ` — ${summary}` : ""}`,
-    url: "/inbox",
-    tag: `email-${lastId}`,
-    dedupeKey: `email:${account.id}:${messageId}`,
-  });
+  const removed = cancelAppointments(cancelled);
+  const saved = found.length ? saveAppointments(lastId, email.fromAddr, found, appt.autoApprove) : [];
+  const who = email.fromName || email.fromAddr;
 
-  if (event && ai.suggestEvents && /^\d{4}-\d{2}-\d{2}$/.test(event.date)) {
-    suggestEventFromEmail(lastId, event);
-    await announcePending("From email", [event.title]);
+  if (saved.length) {
+    const a = saved[0];
+    const more = saved.length > 1 ? ` (+${saved.length - 1} more)` : "";
+    await notify({
+      title: appt.autoApprove ? `📅 Added: ${a.title}` : `📅 Appointment: ${a.title}`,
+      body: `${when(a)}${a.location ? ` · ${a.location}` : ""}${more} — ${appt.autoApprove ? `from ${who}` : "tap to review and add to your calendar"}`,
+      url: appt.autoApprove ? "/calendar" : "/approvals",
+      tag: `appointment-${lastId}`,
+      dedupeKey: `appointment:${account.id}:${messageId}`,
+    });
+  } else if (removed.length) {
+    await notify({
+      title: `❌ Cancelled: ${removed[0]}`,
+      body: `${who} cancelled it, so it's off your calendar.`,
+      url: "/calendar",
+      dedupeKey: `cancel:${account.id}:${messageId}`,
+    });
+  } else if (important) {
+    await notify({
+      title: `📬 ${who}`,
+      body: `${email.subject}${summary ? ` — ${summary}` : ""}`,
+      url: "/inbox",
+      tag: `email-${lastId}`,
+      dedupeKey: `email:${account.id}:${messageId}`,
+    });
   }
-}
-
-function suggestEventFromEmail(emailId: number, ev: { title: string; date: string; time: string | null; location: string | null }) {
-  const timed = ev.time && /^\d{2}:\d{2}$/.test(ev.time);
-  const start = DateTime.fromISO(`${ev.date}T${timed ? ev.time : "00:00"}`, { zone: zone() });
-  if (!start.isValid) return;
-  run(
-    `INSERT INTO events (source, status, email_id, title, start, end, all_day, location)
-     VALUES ('email', 'pending', ?, ?, ?, ?, ?, ?)`,
-    emailId,
-    ev.title,
-    start.toUTC().toISO(),
-    timed ? start.plus({ hours: 1 }).toUTC().toISO() : start.plus({ days: 1 }).toUTC().toISO(),
-    !timed,
-    ev.location,
-  );
 }
 
 async function pollAccount(account: Account, rules: Rule[]) {
@@ -228,7 +328,7 @@ async function pollAccount(account: Account, rules: Rule[]) {
         if (processed++ >= MAX_PER_POLL || !msg.source) continue;
         try {
           const internal = msg.internalDate ? new Date(msg.internalDate) : null;
-          await handleMessage(account, msg.source, [...(msg.labels ?? [])], internal, rules);
+          await processMessage(account, msg.source, [...(msg.labels ?? [])], internal, rules);
         } catch (err) {
           console.error(`[email] ${account.label}: failed to process uid ${msg.uid}:`, err);
         }

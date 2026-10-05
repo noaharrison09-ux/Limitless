@@ -226,7 +226,7 @@ function CalendarsCard() {
       {data?.map((f) => (
         <div key={f.id} style={{ padding: "10px 0", borderTop: "1px solid var(--line)" }}>
           <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-            <span className="swatch" style={{ background: f.color ?? "var(--oak)" }} />
+            <span className="swatch" style={{ background: f.color ?? "var(--silver)" }} />
             <strong style={{ flex: 1 }}>{f.name}</strong>
             <button className="icon-btn" style={{ width: 34, height: 34 }} aria-label="Sync now" onClick={() => sync(f)}>
               <Icon name="refresh" size={16} />
@@ -552,7 +552,33 @@ function EmailCard() {
   );
 }
 
-type Ai = { enabled: boolean; criteria: string; suggestEvents: boolean; hasKey: boolean; envKey: boolean };
+function AppointmentsCard() {
+  const { data, setData } = useApi<{ enabled: boolean; autoApprove: boolean }>("/email/appointments");
+  if (!data) return null;
+  const save = async (patch: Record<string, unknown>) => setData(await api.put("/email/appointments", patch));
+  return (
+    <Card title="Appointments from email" eyebrow="Read & add to calendar">
+      <p className="small" style={{ margin: "0 0 6px", color: "var(--ink-2)" }}>
+        Limitless reads incoming email for appointments: calendar invites, booking and reservation confirmations, and messages like “your
+        appointment is Tue, Oct 14 at 3:30 PM”. Each one shows up in Approvals with the email so you can read it, adjust the details, and add it.
+        Updated or cancelled invites update your calendar automatically.
+      </p>
+      <div className="setting-row">
+        <strong>Find appointments in my email</strong>
+        <Switch checked={data.enabled} onChange={(v) => save({ enabled: v })} label="Find appointments" />
+      </div>
+      <div className="setting-row">
+        <div>
+          <strong>Add them without asking</strong>
+          <div className="small muted">Off = they wait in Approvals</div>
+        </div>
+        <Switch checked={data.autoApprove} onChange={(v) => save({ autoApprove: v })} label="Add without asking" />
+      </div>
+    </Card>
+  );
+}
+
+type Ai = { enabled: boolean; criteria: string; hasKey: boolean; envKey: boolean };
 
 function AiCard() {
   const { data, setData } = useApi<Ai>("/email/ai");
@@ -572,7 +598,7 @@ function AiCard() {
     setResult(null);
     try {
       const r = await api.post<{ important: boolean; reason: string; summary: string; event: { title: string; date: string } | null }>("/email/ai/test", test);
-      setResult(`${r.important ? "✅ Important" : "⏭️ Not important"} — ${r.reason}. ${r.summary}${r.event ? ` 📅 Would suggest: ${r.event.title} on ${r.event.date}` : ""}`);
+      setResult(`${r.important ? "✅ Important" : "⏭️ Not important"} — ${r.reason}. ${r.summary}${r.event ? ` 📅 Appointment: ${r.event.title} on ${r.event.date}` : ""}`);
     } catch (err) {
       setResult(errorMessage(err));
     } finally {
@@ -584,7 +610,7 @@ function AiCard() {
   return (
     <Card title="AI screening" eyebrow="Optional · uses Claude">
       <p className="small" style={{ margin: "0 0 8px", color: "var(--ink-2)" }}>
-        Describe what matters in plain words. Claude reads new emails your rules didn't catch and flags the ones that fit. It also spots dates (tests, practices) and suggests them for your calendar, which you approve first.
+        Describe what matters in plain words. Claude reads new emails your rules didn't catch and flags the ones that fit, and reads appointment emails more accurately than the built-in date reader.
       </p>
       <div className="setting-row">
         <strong>Use AI screening</strong>
@@ -624,10 +650,6 @@ function AiCard() {
             Save description
           </button>
         )}
-        <div className="setting-row">
-          <span className="small">Suggest calendar events from emails</span>
-          <Switch checked={data.suggestEvents} onChange={(v) => save({ suggestEvents: v })} label="Suggest events" />
-        </div>
         {hasKey && (
           <Help summary="Try it on a sample email">
             <div className="form" style={{ marginTop: 8 }}>
@@ -673,6 +695,7 @@ export function SettingsPage() {
             <CalendarsCard />
             <SchoologyCard s={data} onSaved={reload} />
             <EmailCard />
+            <AppointmentsCard />
             <AiCard />
             <Card title="Your data">
               <div className="btn-row">

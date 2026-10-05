@@ -14,11 +14,19 @@ function openLink(m: ImportantEmail): string | null {
   return `https://mail.google.com/mail/u/0/#search/rfc822msgid%3A${encodeURIComponent(id)}`;
 }
 
+function FullEmail({ id }: { id: number }) {
+  const { data, error } = useApi<{ body: string | null; snippet: string | null }>(`/email/important/${id}`);
+  if (error) return <ErrorBox error={error} />;
+  if (!data) return <Spinner />;
+  return <div className="email-body" style={{ marginTop: 10 }}>{data.body || data.snippet || "(No text in this email.)"}</div>;
+}
+
 export function InboxPage() {
   const [filter, setFilter] = useState<"unread" | "all">("unread");
   const { data, error, setData, reload } = useApi<ImportantEmail[]>(`/email/important?filter=${filter}`);
   const accounts = useApi<{ id: number }[]>("/email/accounts").data;
   const [checking, setChecking] = useState(false);
+  const [open, setOpen] = useState<number | null>(null);
 
   const markRead = async (m: ImportantEmail, read = true) => {
     setData((data ?? []).map((x) => (x.id === m.id ? { ...x, read: read ? 1 : 0 } : x)).filter((x) => filter === "all" || !x.read));
@@ -99,9 +107,15 @@ export function InboxPage() {
                 </div>
                 <div style={{ fontWeight: 600, marginTop: 2 }}>{m.subject}</div>
                 {m.summary && <p className="small" style={{ margin: "6px 0 0" }}>{m.summary}</p>}
-                {!m.summary && m.snippet && <p className="small muted" style={{ margin: "6px 0 0" }}>{m.snippet}</p>}
+                {!m.summary && m.snippet && open !== m.id && <p className="small muted" style={{ margin: "6px 0 0" }}>{m.snippet}</p>}
+                {open === m.id && <FullEmail id={m.id} />}
                 <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10, alignItems: "center" }}>
                   {m.reason && <span className="chip">{m.reason}</span>}
+                  {m.appointment_count ? (
+                    <Link to="/approvals" className="chip metal" style={{ textDecoration: "none" }}>
+                      <Icon name="calendar" size={12} /> On calendar list
+                    </Link>
+                  ) : null}
                   {m.account_label && <span className="chip">{m.account_label}</span>}
                   <span style={{ flex: 1 }} />
                   {link && (
@@ -109,6 +123,9 @@ export function InboxPage() {
                       <Icon name="external" size={15} /> Open
                     </a>
                   )}
+                  <button className="btn small" onClick={() => setOpen(open === m.id ? null : m.id)}>
+                    <Icon name="mail" size={15} /> {open === m.id ? "Close" : "Read"}
+                  </button>
                   <button className="btn small" onClick={() => markRead(m, !m.read)}>
                     <Icon name="check" size={15} /> {m.read ? "Unread" : "Read"}
                   </button>

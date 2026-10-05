@@ -20,7 +20,7 @@ function NotificationPrompt() {
 
   if (needsInstallForPush()) {
     return (
-      <Card className="wood-edge" eyebrow="Get notifications" title="Add Limitless to your Home Screen">
+      <Card className="accent-edge" eyebrow="Get notifications" title="Add Limitless to your Home Screen">
         <p className="small" style={{ margin: 0, color: "var(--ink-2)" }}>
           On iPhone, notifications only work for apps on your Home Screen. Tap <strong>Share</strong> → <strong>Add to Home Screen</strong>, then open Limitless from there and tap “Turn on”.
         </p>
@@ -41,7 +41,7 @@ function NotificationPrompt() {
     }
   };
   return (
-    <Card className="wood-edge" eyebrow="Stay in the loop" title="Turn on notifications">
+    <Card className="accent-edge" eyebrow="Stay in the loop" title="Turn on notifications">
       <p className="small" style={{ margin: "0 0 12px", color: "var(--ink-2)" }}>
         Morning briefing, homework due soon, important emails, and things waiting for your approval.
       </p>
@@ -177,7 +177,7 @@ export function TodayPage() {
       <div className="page">
         {data.pendingApprovals > 0 && (
           <Link to="/approvals" style={{ textDecoration: "none", color: "inherit" }}>
-            <section className="card wood-edge" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <section className="card accent-edge" style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <div className="row-main">
                 <div className="eyebrow">Needs your OK</div>
                 <h2 style={{ fontSize: 18 }}>
@@ -244,7 +244,7 @@ export function TodayPage() {
             todaysEvents.map((e) => (
               <div key={e.id} className="row" style={{ padding: "9px 0", minHeight: 0 }}>
                 <div className="time-col">{e.all_day ? "All day" : fmtTime(e.start)}</div>
-                <span className="event-bar" style={{ background: e.color ?? "var(--walnut-2)" }} />
+                <span className="event-bar" style={{ background: e.color ?? "var(--steel-2)" }} />
                 <div className="row-main">
                   <div className="row-title">{e.title}</div>
                   {e.location && <div className="row-sub">{e.location}</div>}

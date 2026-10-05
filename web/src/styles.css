@@ -1,41 +1,42 @@
-/* Limitless — warm white with walnut & oak wood accents */
+/* Limitless — clean white with dark silver (brushed gunmetal) accents */
 
 :root {
   color-scheme: light;
 
-  --bg: #faf6ef;
+  --bg: #f5f6f8;
   --surface: #ffffff;
-  --surface-2: #f5ede2;
-  --surface-3: #efe3d3;
-  --line: #e9dfd1;
-  --line-strong: #d9c6ae;
+  --surface-2: #eef0f3;
+  --surface-3: #e3e6ea;
+  --line: #e1e4e9;
+  --line-strong: #c8cdd4;
 
-  --ink: #2b1d12;
-  --ink-2: #6a5444;
-  --ink-3: #9b8675;
+  --ink: #14161a;
+  --ink-2: #4a5059;
+  --ink-3: #868d97;
 
-  --walnut: #5e3719;
-  --walnut-2: #7a4a26;
-  --oak: #b98a57;
-  --oak-2: #d8b98f;
-  --oak-wash: #f3e7d6;
-  --cream: #fff8ee;
+  /* dark silver / gunmetal accents */
+  --steel: #2c3137;
+  --steel-2: #4a5058;
+  --silver: #8a919b;
+  --silver-2: #c5cad1;
+  --silver-wash: #eceef1;
+  --light: #f4f6f9;
 
-  --good: #4c7a35;
-  --good-wash: #edf3e6;
-  --warn: #a8661a;
-  --warn-wash: #fbf0de;
-  --bad: #a3382a;
-  --bad-wash: #f9e7e3;
+  --good: #2f7a4b;
+  --good-wash: #e8f3ec;
+  --warn: #9c6512;
+  --warn-wash: #f8f0e1;
+  --bad: #b2362a;
+  --bad-wash: #f8e6e4;
 
-  /* chart series (validated: CVD-safe, >= 3:1 on white) */
-  --series-1: #7f3f12;
-  --series-2: #c47f2c;
+  /* chart series (validated: CVD-safe; light series relies on labels + table view) */
+  --series-1: #2a5fa8;
+  --series-2: #5b9be6;
 
   --radius: 18px;
   --radius-sm: 12px;
-  --shadow: 0 1px 2px rgba(70, 40, 15, 0.05), 0 6px 20px rgba(70, 40, 15, 0.06);
-  --shadow-lg: 0 10px 40px rgba(50, 28, 10, 0.18);
+  --shadow: 0 1px 2px rgba(20, 24, 30, 0.05), 0 6px 20px rgba(20, 24, 30, 0.06);
+  --shadow-lg: 0 10px 40px rgba(12, 14, 18, 0.22);
 
   --font: "Inter", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --serif: "Fraunces", "Iowan Old Style", Georgia, serif;
@@ -44,11 +45,9 @@
   --safe-bottom: env(safe-area-inset-bottom, 0px);
   --tabbar-h: 64px;
 
-  /* Procedural wood grain: long horizontal streaks over a walnut base. */
-  --grain: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='260'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0035 0.16' numOctaves='4' seed='11'/%3E%3CfeColorMatrix values='0 0 0 0 0.16 0 0 0 0 0.08 0 0 0 0 0.03 1.6 0 0 0 -0.62'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-  --grain-light: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='260'%3E%3Cfilter id='g' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0035 0.16' numOctaves='4' seed='5'/%3E%3CfeColorMatrix values='0 0 0 0 0.45 0 0 0 0 0.28 0 0 0 0 0.12 1.2 0 0 0 -0.5'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23g)'/%3E%3C/svg%3E");
-  --wood: var(--grain), linear-gradient(170deg, #7d4c27 0%, #613a1b 55%, #4f2f15 100%);
-  --wood-oak: var(--grain-light), linear-gradient(170deg, #e2c49b 0%, #cfa877 100%);
+  /* Brushed metal: fine horizontal streaks over a graphite gradient. */
+  --brush: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='640' height='260'%3E%3Cfilter id='b' x='0' y='0' width='100%25' height='100%25'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.0025 0.9' numOctaves='2' seed='4'/%3E%3CfeColorMatrix values='0 0 0 0 1 0 0 0 0 1 0 0 0 0 1 0.55 0 0 0 -0.2'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23b)'/%3E%3C/svg%3E");
+  --metal: var(--brush), linear-gradient(165deg, #60666f 0%, #3d4249 46%, #25292e 100%);
 }
 
 * {
@@ -84,7 +83,7 @@ h3 {
 }
 
 a {
-  color: var(--walnut-2);
+  color: var(--steel-2);
 }
 
 button,
@@ -112,7 +111,7 @@ textarea {
   display: flex;
   align-items: center;
   gap: 10px;
-  background: rgba(250, 246, 239, 0.88);
+  background: rgba(245, 246, 248, 0.88);
   backdrop-filter: saturate(160%) blur(14px);
   -webkit-backdrop-filter: saturate(160%) blur(14px);
   border-bottom: 1px solid var(--line);
@@ -129,12 +128,12 @@ textarea {
 
 .hero {
   position: relative;
-  background: var(--wood);
-  background-size: 640px 260px, cover;
-  color: var(--cream);
+  background: var(--metal);
+  background-size: 640px 130px, cover;
+  color: var(--light);
   padding: calc(var(--safe-top) + 18px) 20px 26px;
   border-radius: 0 0 28px 28px;
-  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.08), 0 8px 24px rgba(60, 33, 12, 0.18);
+  box-shadow: inset 0 -1px 0 rgba(255, 255, 255, 0.1), 0 8px 24px rgba(12, 14, 18, 0.22);
   overflow: hidden;
 }
 
@@ -143,18 +142,18 @@ textarea {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(115deg, rgba(255, 240, 215, 0.14) 0%, rgba(255, 240, 215, 0) 45%);
+  background: linear-gradient(105deg, rgba(255, 255, 255, 0) 18%, rgba(255, 255, 255, 0.13) 38%, rgba(255, 255, 255, 0) 58%);
   pointer-events: none;
 }
 
 .hero h1 {
-  color: var(--cream);
+  color: var(--light);
   font-size: 30px;
   line-height: 1.15;
 }
 
 .hero .eyebrow {
-  color: var(--oak-2);
+  color: var(--silver-2);
 }
 
 .hero-row {
@@ -176,8 +175,8 @@ textarea {
 }
 
 .hero-stat {
-  background: rgba(255, 248, 238, 0.1);
-  border: 1px solid rgba(255, 248, 238, 0.16);
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.14);
   border-radius: 14px;
   padding: 10px 12px;
 }
@@ -191,7 +190,7 @@ textarea {
 
 .hero-stat .l {
   font-size: 12px;
-  color: var(--oak-2);
+  color: var(--silver-2);
 }
 
 .icon-btn {
@@ -203,15 +202,15 @@ textarea {
   border-radius: 12px;
   border: 1px solid var(--line);
   background: var(--surface);
-  color: var(--walnut);
+  color: var(--steel);
   cursor: pointer;
   flex: none;
 }
 
 .hero .icon-btn {
-  background: rgba(255, 248, 238, 0.12);
-  border-color: rgba(255, 248, 238, 0.22);
-  color: var(--cream);
+  background: rgba(255, 255, 255, 0.1);
+  border-color: rgba(255, 255, 255, 0.2);
+  color: var(--light);
 }
 
 .dot-badge {
@@ -276,7 +275,7 @@ textarea {
 }
 
 .tab.active {
-  color: var(--walnut);
+  color: var(--steel);
 }
 
 .tab.active::before {
@@ -286,8 +285,8 @@ textarea {
   width: 36px;
   height: 4px;
   border-radius: 0 0 4px 4px;
-  background: var(--wood);
-  background-size: 640px 260px, cover;
+  background: var(--metal);
+  background-size: 640px 130px, cover;
 }
 
 .tab .badge-inline {
@@ -320,21 +319,21 @@ textarea {
   overflow: hidden;
 }
 
-.card.wood-edge {
+.card.accent-edge {
   position: relative;
   padding-left: 22px;
   overflow: hidden;
 }
 
-.card.wood-edge::before {
+.card.accent-edge::before {
   content: "";
   position: absolute;
   left: 0;
   top: 0;
   bottom: 0;
   width: 6px;
-  background: var(--wood);
-  background-size: 640px 260px, cover;
+  background: var(--metal);
+  background-size: 640px 130px, cover;
 }
 
 .card-head {
@@ -354,7 +353,7 @@ textarea {
   font-weight: 700;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--oak);
+  color: var(--silver);
 }
 
 .muted {
@@ -373,7 +372,7 @@ textarea {
   background: none;
   border: none;
   padding: 4px 0;
-  color: var(--walnut-2);
+  color: var(--steel-2);
   font-weight: 600;
   font-size: 14px;
   cursor: pointer;
@@ -475,10 +474,10 @@ textarea {
   color: var(--bad);
 }
 
-.chip.wood {
-  background: var(--wood);
-  background-size: 640px 260px, cover;
-  color: var(--cream);
+.chip.metal {
+  background: var(--metal);
+  background-size: 640px 130px, cover;
+  color: var(--light);
 }
 
 .swatch {
@@ -500,7 +499,7 @@ textarea {
   border-radius: 14px;
   border: 1px solid var(--line-strong);
   background: var(--surface);
-  color: var(--walnut);
+  color: var(--steel);
   font-weight: 600;
   font-size: 15px;
   cursor: pointer;
@@ -518,11 +517,11 @@ textarea {
 }
 
 .btn.primary {
-  background: var(--wood);
-  background-size: 640px 260px, cover;
-  border-color: #4c2c12;
-  color: var(--cream);
-  box-shadow: inset 0 1px 0 rgba(255, 240, 215, 0.18), 0 2px 8px rgba(70, 40, 15, 0.22);
+  background: var(--metal);
+  background-size: 640px 130px, cover;
+  border-color: #1e2227;
+  color: var(--light);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.22), 0 2px 8px rgba(12, 14, 18, 0.25);
 }
 
 .btn.danger {
@@ -595,8 +594,8 @@ textarea.input {
 }
 
 .input:focus {
-  border-color: var(--oak);
-  box-shadow: 0 0 0 3px rgba(185, 138, 87, 0.22);
+  border-color: var(--silver);
+  box-shadow: 0 0 0 3px rgba(138, 145, 155, 0.25);
 }
 
 .form {
@@ -627,7 +626,7 @@ textarea.input {
 
 .notice {
   font-size: 14px;
-  background: var(--oak-wash);
+  background: var(--silver-wash);
   color: var(--ink-2);
   padding: 12px 14px;
   border-radius: 12px;
@@ -641,7 +640,7 @@ textarea.input {
   width: 26px;
   height: 26px;
   border-radius: 9px;
-  border: 2px solid var(--oak-2);
+  border: 2px solid var(--silver-2);
   background: var(--surface);
   display: grid;
   place-items: center;
@@ -652,16 +651,16 @@ textarea.input {
 }
 
 .check:checked {
-  background: var(--wood);
-  background-size: 640px 260px, cover;
-  border-color: var(--walnut);
+  background: var(--metal);
+  background-size: 640px 130px, cover;
+  border-color: var(--steel);
 }
 
 .check:checked::after {
   content: "";
   width: 7px;
   height: 12px;
-  border: solid var(--cream);
+  border: solid var(--light);
   border-width: 0 2.5px 2.5px 0;
   transform: translateY(-1px) rotate(45deg);
 }
@@ -696,9 +695,9 @@ textarea.input {
 }
 
 .switch:checked {
-  background: var(--wood);
-  background-size: 640px 260px, cover;
-  border-color: var(--walnut);
+  background: var(--metal);
+  background-size: 640px 130px, cover;
+  border-color: var(--steel);
 }
 
 .switch:checked::after {
@@ -731,23 +730,23 @@ textarea.input {
 
 .segmented button.on {
   background: var(--surface);
-  color: var(--walnut);
-  box-shadow: 0 1px 3px rgba(70, 40, 15, 0.12);
+  color: var(--steel);
+  box-shadow: 0 1px 3px rgba(20, 24, 30, 0.12);
 }
 
 /* Progress */
 .progress {
   height: 8px;
   border-radius: 999px;
-  background: var(--oak-wash);
+  background: var(--silver-wash);
   overflow: hidden;
 }
 
 .progress > div {
   height: 100%;
   border-radius: 999px;
-  background: var(--wood);
-  background-size: 640px 260px, cover;
+  background: var(--metal);
+  background-size: 640px 130px, cover;
   transition: width 0.3s ease;
 }
 
@@ -757,7 +756,7 @@ textarea.input {
   position: fixed;
   inset: 0;
   z-index: 50;
-  background: rgba(43, 29, 18, 0.42);
+  background: rgba(14, 16, 20, 0.45);
   display: flex;
   align-items: flex-end;
   justify-content: center;
@@ -823,8 +822,8 @@ textarea.input {
   border-radius: 16px;
   display: grid;
   place-items: center;
-  background: var(--oak-wash);
-  color: var(--oak);
+  background: var(--silver-wash);
+  color: var(--silver);
 }
 
 .empty strong {
@@ -843,13 +842,13 @@ textarea.input {
   width: 58px;
   height: 58px;
   border-radius: 18px;
-  border: 1px solid #4c2c12;
-  background: var(--wood);
-  background-size: 640px 260px, cover;
-  color: var(--cream);
+  border: 1px solid #1e2227;
+  background: var(--metal);
+  background-size: 640px 130px, cover;
+  color: var(--light);
   display: grid;
   place-items: center;
-  box-shadow: 0 8px 24px rgba(70, 40, 15, 0.35), inset 0 1px 0 rgba(255, 240, 215, 0.2);
+  box-shadow: 0 8px 24px rgba(12, 14, 18, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.24);
   cursor: pointer;
 }
 
@@ -860,7 +859,7 @@ textarea.input {
   transform: translateX(-50%);
   z-index: 60;
   background: var(--ink);
-  color: var(--cream);
+  color: var(--light);
   padding: 11px 16px;
   border-radius: 14px;
   font-size: 14px;
@@ -929,9 +928,9 @@ textarea.input {
   border-radius: 13px;
   display: grid;
   place-items: center;
-  background: var(--wood);
-  background-size: 640px 260px, cover;
-  color: var(--cream);
+  background: var(--metal);
+  background-size: 640px 130px, cover;
+  color: var(--light);
 }
 
 .tile strong {
@@ -963,7 +962,7 @@ textarea.input {
 }
 
 .day-head.today {
-  color: var(--walnut);
+  color: var(--steel);
 }
 
 .time-col {
@@ -1019,14 +1018,14 @@ textarea.input {
 }
 
 .month button.today {
-  color: var(--walnut);
-  box-shadow: inset 0 0 0 1.5px var(--oak);
+  color: var(--steel);
+  box-shadow: inset 0 0 0 1.5px var(--silver);
 }
 
 .month button.sel {
-  background: var(--wood);
-  background-size: 640px 260px, cover;
-  color: var(--cream);
+  background: var(--metal);
+  background-size: 640px 130px, cover;
+  color: var(--light);
 }
 
 .month .dots {
@@ -1039,11 +1038,11 @@ textarea.input {
   width: 5px;
   height: 5px;
   border-radius: 50%;
-  background: var(--oak);
+  background: var(--silver);
 }
 
 .month button.sel .dots i {
-  background: var(--cream);
+  background: var(--light);
 }
 
 .chart-wrap {
@@ -1056,7 +1055,7 @@ textarea.input {
   top: 0;
   pointer-events: none;
   background: var(--ink);
-  color: var(--cream);
+  color: var(--light);
   border-radius: 10px;
   padding: 6px 9px;
   font-size: 12px;
@@ -1097,9 +1096,9 @@ textarea.input {
 }
 
 .mood-row button.on {
-  border-color: var(--oak);
-  background: var(--oak-wash);
-  box-shadow: inset 0 0 0 1px var(--oak);
+  border-color: var(--silver);
+  background: var(--silver-wash);
+  box-shadow: inset 0 0 0 1px var(--silver);
 }
 
 .journal-q {
@@ -1116,8 +1115,8 @@ textarea.input {
   display: flex;
   flex-direction: column;
   justify-content: flex-end;
-  background: var(--wood);
-  background-size: 640px 260px, cover;
+  background: var(--metal);
+  background-size: 640px 130px, cover;
 }
 
 .login-top {
@@ -1126,13 +1125,13 @@ textarea.input {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  color: var(--cream);
+  color: var(--light);
   padding: calc(var(--safe-top) + 40px) 24px 30px;
   text-align: center;
 }
 
 .login-top h1 {
-  color: var(--cream);
+  color: var(--light);
   font-size: 42px;
 }
 
@@ -1146,8 +1145,8 @@ textarea.input {
   width: 22px;
   height: 22px;
   border-radius: 50%;
-  border: 2.5px solid var(--oak-wash);
-  border-top-color: var(--walnut-2);
+  border: 2.5px solid var(--silver-wash);
+  border-top-color: var(--steel-2);
   animation: spin 0.8s linear infinite;
   margin: 30px auto;
 }
@@ -1159,13 +1158,13 @@ textarea.input {
 }
 
 .note-card {
-  background: #fffdf8;
+  background: #fdfdfe;
   border: 1px solid var(--line);
   border-radius: 14px;
   padding: 12px 14px;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
-  box-shadow: 0 1px 0 rgba(70, 40, 15, 0.04);
+  box-shadow: 0 1px 0 rgba(20, 24, 30, 0.04);
 }
 
 .note-meta {
@@ -1219,7 +1218,7 @@ details.help {
 details.help summary {
   cursor: pointer;
   font-weight: 600;
-  color: var(--walnut-2);
+  color: var(--steel-2);
 }
 
 details.help ol {
@@ -1315,4 +1314,22 @@ details.help li + li {
 
 .stat .value {
   font-size: 22px;
+}
+
+.email-preview {
+  background: var(--surface-2);
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.email-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  line-height: 1.5;
+  color: var(--ink-2);
+  max-height: 340px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }

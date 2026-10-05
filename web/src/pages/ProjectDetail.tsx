@@ -74,9 +74,9 @@ export function ProjectDetailPage() {
         }
       />
       <div className="page">
-        <Card className="wood-edge">
+        <Card className="accent-edge">
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: data.description ? 10 : 0 }}>
-            <span className="chip wood">{STATUS_LABEL[data.status]}</span>
+            <span className="chip metal">{STATUS_LABEL[data.status]}</span>
             <span className="chip">Started {ago(data.created_at)}</span>
             <button className={`chip${data.pinned ? " warn" : ""}`} style={{ border: 0, cursor: "pointer" }} onClick={togglePin}>
               <Icon name="pin" size={12} /> {data.pinned ? "Pinned" : "Pin"}
@@ -116,7 +116,7 @@ export function ProjectDetailPage() {
         </Card>
 
         {data.notes.map((n) => (
-          <div key={n.id} className="note-card" style={n.pinned ? { borderColor: "var(--oak-2)", background: "var(--oak-wash)" } : undefined}>
+          <div key={n.id} className="note-card" style={n.pinned ? { borderColor: "var(--silver-2)", background: "var(--silver-wash)" } : undefined}>
             {n.body}
             <div className="note-meta">
               <span>

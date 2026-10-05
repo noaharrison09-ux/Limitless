@@ -1,12 +1,13 @@
 # Limitless
 
-A personal life dashboard that lives on your phone's Home Screen, styled in warm white with walnut wood accents. It sends you push notifications and covers:
+A personal life dashboard that lives on your phone's Home Screen, styled in clean white with brushed dark-silver accents. It sends you push notifications and covers:
 
 ![Limitless screens](docs/screens.jpg)
 
 - **Today**: a morning snapshot with your non-negotiables, today's schedule, homework due, bulk progress, important emails, goals, and a journal prompt.
 - **Calendar**: month and upcoming views. It merges your Google, Apple or Outlook calendars, your own events, and homework due dates.
-- **Approvals**: anything Limitless finds on its own waits here until you tap **Approve**. That covers new Schoology assignments, events from linked calendars, and dates spotted in important emails. Nothing lands on your calendar without your OK.
+- **Approvals**: anything Limitless finds on its own waits here until you tap **Approve**. That covers new Schoology assignments, events from linked calendars, and appointments found in your email. Nothing lands on your calendar without your OK.
+- **Appointments from email**: Limitless reads every incoming email for appointments, including calendar invites, booking and reservation confirmations, and lines like *"your appointment is Tue, Oct 14 at 3:30 PM"*. Each one appears in Approvals with the email right there to read. You can fix the title or time, then add it with one tap. Updated or cancelled invites change your calendar automatically.
 - **Homework**: grouped by Overdue, Today, Tomorrow, This week and Later. Schoology assignments import automatically, and you can filter by class.
 - **Journal**: each night you write what went right, what went wrong, and the **non-negotiables for tomorrow**. Those show up as a checklist the next morning, and the app tracks your streak.
 - **Body & bulk**: daily weigh-ins with a 7-day average trend chart, weekly gain rate with an "on pace" check, a goal projection, calories and protein, lifts with estimated 1-rep max, and tape measurements.
@@ -24,7 +25,7 @@ A personal life dashboard that lives on your phone's Home Screen, styled in warm
 | 9:00 PM | Journal reminder (only if you haven't written today) |
 | 3 h before | A timed assignment is due soon |
 | 30 min before | An event is starting |
-| Right away | An important email arrives, or new items are waiting for approval |
+| Right away | An important email arrives, an appointment is found in your email, or new items are waiting for approval |
 
 You can change every time, or turn any reminder off, in **Settings → Reminders**.
 
@@ -84,12 +85,14 @@ The app checks Schoology every 30 minutes. New assignments go to **Approvals** f
    - *Gmail marked it important*: uses Gmail's own Important label.
    - *Never alert me from*: blocks a sender (`noreply@, newsletter`), and always wins over other rules.
 
+3. **Appointments** are on by default (**Settings → Appointments from email**). The app finds them even in emails that don't match your rules. They wait in Approvals unless you turn on **Add them without asking**. A confirmation and a later reminder for the same appointment only add it once.
+
 > School Google or Microsoft accounts sometimes block app passwords. If yours won't connect, set your school mail to auto-forward to your personal Gmail and connect that instead.
 
 ### AI screening (optional)
 If you'd rather describe what matters than write rules, turn on **AI screening**. Add an Anthropic API key from [console.anthropic.com](https://console.anthropic.com) (either in Settings or as the `ANTHROPIC_API_KEY` variable), and write something like *"emails from my teachers and coaches, anything about grades, tests, college or my job"*.
 
-Claude checks new emails your rules didn't catch. It skips mailing-list blasts to keep costs down. It writes a one-line summary for each alert, and when an email mentions a date (*"the test moved to Friday"*), it suggests a calendar event for you to approve. You can try it on a sample email in Settings before turning it on. The API is billed per use by Anthropic. For a normal personal inbox that is usually cents per day.
+Claude checks new emails your rules didn't catch. It skips mailing-list blasts to keep costs down. It writes a one-line summary for each alert, and it reads appointment emails more accurately than the built-in date reader (for example *"the test moved to Friday"*). You can try it on a sample email in Settings before turning it on. The API is billed per use by Anthropic. For a normal personal inbox that is usually cents per day.
 
 ## 4. Everyday use
 
@@ -124,10 +127,10 @@ npm start               # serve the built app + API on :8787
 - `server/`: Node.js + Express, run straight from TypeScript. It stores data in SQLite (`node:sqlite`, a single file at `$DATA_DIR/limitless.db`), and a one-minute scheduler runs syncs and reminders.
   - `services/ical.ts` parses calendar feeds, including repeating events and time zones.
   - `services/schoology.ts` handles the Schoology iCal and API import (OAuth 1.0a).
-  - `services/email.ts` checks mail over IMAP and applies your rules. `services/ai.ts` holds the optional Claude screening.
+  - `services/email.ts` checks mail over IMAP and applies your rules. `services/appointments.ts` finds appointments in emails (invites, or dates in the text). `services/ai.ts` holds the optional Claude screening.
   - `services/approvals.ts` runs the approval queue. `services/reminders.ts` and `services/push.ts` handle notifications (Web Push).
 - `web/`: a React app built with Vite and installable as a PWA. `web/public/sw.js` is the service worker that handles notifications and offline loading.
-- `scripts/make-icons.mjs` regenerates the wood app icons.
+- `scripts/make-icons.mjs` regenerates the brushed-silver app icons.
 
 ### Security notes
 - The whole app sits behind your password, and sessions are long-lived, secure, HTTP-only cookies.

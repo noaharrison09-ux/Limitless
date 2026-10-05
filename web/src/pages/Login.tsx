@@ -26,7 +26,7 @@ export function Login({ onDone }: { onDone: () => void }) {
       <div className="login-top">
         <img src="/icons/icon-192.png" alt="" width={84} height={84} style={{ borderRadius: 22, boxShadow: "0 10px 30px rgba(0,0,0,.35)" }} />
         <h1 style={{ marginTop: 18 }}>Limitless</h1>
-        <p style={{ color: "var(--oak-2)", margin: "6px 0 0" }}>Your days, your goals, your progress.</p>
+        <p style={{ color: "var(--silver-2)", margin: "6px 0 0" }}>Your days, your goals, your progress.</p>
       </div>
       <form className="login-panel form" onSubmit={submit}>
         <label className="field">

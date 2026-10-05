@@ -44,8 +44,13 @@ export type AiSettings = {
   enabled: boolean;
   criteria: string;
   apiKeyEnc: string | null;
-  /** Let the AI suggest calendar events found in important emails (they go to the approval queue). */
-  suggestEvents: boolean;
+};
+
+export type AppointmentSettings = {
+  /** Read incoming email for appointments (calendar invites, booking confirmations). */
+  enabled: boolean;
+  /** Add found appointments straight to the calendar instead of the approval queue. */
+  autoApprove: boolean;
 };
 
 export const defaults = {
@@ -80,8 +85,8 @@ export const defaults = {
     criteria:
       "Emails from my teachers, coaches, or school staff; anything about grades, tests, deadlines, schedule changes, college, jobs, or money; and messages from real people who expect a reply. Not newsletters, promotions, or automated notifications.",
     apiKeyEnc: null,
-    suggestEvents: true,
   } as AiSettings,
+  appointments: { enabled: true, autoApprove: false } as AppointmentSettings,
 };
 
 type Defaults = typeof defaults;

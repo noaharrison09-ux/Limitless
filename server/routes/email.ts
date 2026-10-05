@@ -2,7 +2,7 @@ import { Router } from "express";
 import { all, get, run } from "../db.ts";
 import { encrypt } from "../crypto.ts";
 import { config } from "../config.ts";
-import { load, patch, type AiSettings } from "../settings.ts";
+import { load, patch, type AiSettings, type AppointmentSettings } from "../settings.ts";
 import { checkAllEmail, testConnection, type RuleField } from "../services/email.ts";
 import { aiApiKey, screenWithAi } from "../services/ai.ts";
 import { HttpError, crudRouter, idParam, pick, updateRow } from "./crud.ts";
@@ -94,12 +94,26 @@ emailRouter.get("/important", (req, res) => {
   const unreadOnly = req.query.filter === "unread";
   res.json(
     all(
-      `SELECT m.*, a.label AS account_label, a.host AS account_host FROM important_emails m
+      `SELECT m.id, m.account_id, m.message_id, m.from_name, m.from_addr, m.subject, m.snippet, m.received_at, m.reason,
+              m.summary, m.read, a.label AS account_label, a.host AS account_host,
+              (SELECT COUNT(*) FROM events e WHERE e.email_id = m.id) AS appointment_count
+       FROM important_emails m
        LEFT JOIN email_accounts a ON a.id = m.account_id
        ${unreadOnly ? "WHERE m.read = 0" : ""}
        ORDER BY m.received_at DESC LIMIT 200`,
     ),
   );
+});
+
+/** The full email, for reading it in the app. */
+emailRouter.get("/important/:id", (req, res) => {
+  const row = get(
+    `SELECT m.*, a.label AS account_label, a.host AS account_host FROM important_emails m
+     LEFT JOIN email_accounts a ON a.id = m.account_id WHERE m.id = ?`,
+    idParam(req),
+  );
+  if (!row) throw new HttpError(404, "Not found");
+  res.json(row);
 });
 
 emailRouter.patch("/important/:id", (req, res) => {
@@ -116,6 +130,19 @@ emailRouter.delete("/important/:id", (req, res) => {
   res.json({ ok: true });
 });
 
+/* ---------- Appointments ---------- */
+
+emailRouter.get("/appointments", (_req, res) => {
+  res.json(load("appointments"));
+});
+
+emailRouter.put("/appointments", (req, res) => {
+  const next: Partial<AppointmentSettings> = {};
+  if (typeof req.body?.enabled === "boolean") next.enabled = req.body.enabled;
+  if (typeof req.body?.autoApprove === "boolean") next.autoApprove = req.body.autoApprove;
+  res.json(patch("appointments", next));
+});
+
 /* ---------- AI screening ---------- */
 
 function publicAi() {
@@ -123,7 +150,6 @@ function publicAi() {
   return {
     enabled: ai.enabled,
     criteria: ai.criteria,
-    suggestEvents: ai.suggestEvents,
     hasKey: !!ai.apiKeyEnc,
     envKey: !!config.anthropicApiKey,
   };
@@ -137,7 +163,6 @@ emailRouter.put("/ai", (req, res) => {
   const b = req.body ?? {};
   const next: Partial<AiSettings> = {};
   if (typeof b.enabled === "boolean") next.enabled = b.enabled;
-  if (typeof b.suggestEvents === "boolean") next.suggestEvents = b.suggestEvents;
   if (typeof b.criteria === "string") next.criteria = b.criteria.trim().slice(0, 4000);
   if (typeof b.apiKey === "string") next.apiKeyEnc = b.apiKey.trim() ? encrypt(b.apiKey.trim()) : null;
   patch("ai", next);

@@ -116,7 +116,7 @@ export function ProjectsPage() {
         }
       />
       <div className="page">
-        <Card eyebrow="Capture" title="What's on your mind?" className="wood-edge">
+        <Card eyebrow="Capture" title="What's on your mind?" className="accent-edge">
           <textarea
             className="input"
             rows={3}
@@ -163,7 +163,7 @@ export function ProjectsPage() {
                   {p.note_count ? ` · ${p.note_count} notes` : ""}
                 </div>
                 {p.pinned ? (
-                  <span style={{ position: "absolute", top: 12, right: 12, color: "var(--oak)" }}>
+                  <span style={{ position: "absolute", top: 12, right: 12, color: "var(--silver)" }}>
                     <Icon name="pin" size={16} />
                   </span>
                 ) : null}
