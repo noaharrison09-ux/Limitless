@@ -1,85 +1,66 @@
-/* Limitless service worker: push notifications + offline app shell. */
-const SHELL = "limitless-shell-v1";
-const ASSETS = "limitless-assets-v1";
+/*
+ * Limitless service worker: makes the app open instantly and work offline, including from the
+ * Home Screen. Paths are relative to wherever the app is hosted (e.g. /Limitless/ on GitHub Pages).
+ * Your data isn't here: it lives in the app's on-device database (IndexedDB).
+ */
+const CACHE = "limitless-v3";
+const SHELL = ["./", "./index.html", "./manifest.webmanifest", "./icons/icon-192.png", "./icons/apple-touch-icon.png"];
+
+const scoped = (path) => new URL(path, self.registration.scope).href;
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(SHELL).then((c) => c.addAll(["/", "/manifest.webmanifest", "/icons/icon-192.png"])).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches
+      .open(CACHE)
+      .then((c) => c.addAll(SHELL.map(scoped)))
+      .then(() => self.skipWaiting()),
+  );
 });
 
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
       .keys()
-      .then((keys) => Promise.all(keys.filter((k) => k !== SHELL && k !== ASSETS).map((k) => caches.delete(k))))
+      .then((keys) => Promise.all(keys.filter((k) => k.startsWith("limitless-") && k !== CACHE).map((k) => caches.delete(k))))
       .then(() => self.clients.claim()),
   );
 });
 
 self.addEventListener("fetch", (event) => {
   const req = event.request;
+  if (req.method !== "GET") return;
   const url = new URL(req.url);
-  if (req.method !== "GET" || url.origin !== self.location.origin || url.pathname.startsWith("/api/")) return;
+  if (url.origin !== self.location.origin || !req.url.startsWith(self.registration.scope)) return;
 
-  // Pages: network first so updates show up, cached shell when offline.
+  // The page itself: try the network for updates, fall back to the saved copy offline.
   if (req.mode === "navigate") {
     event.respondWith(
       fetch(req)
         .then((res) => {
-          const copy = res.clone();
-          caches.open(SHELL).then((c) => c.put("/", copy));
+          if (res.ok) {
+            const copy = res.clone();
+            caches.open(CACHE).then((c) => c.put(scoped("./"), copy));
+          }
           return res;
         })
-        .catch(() => caches.match("/")),
+        .catch(() => caches.match(scoped("./"))),
     );
     return;
   }
 
-  // Hashed build assets and icons: cache first.
-  if (url.pathname.startsWith("/assets/") || url.pathname.startsWith("/icons/")) {
-    event.respondWith(
-      caches.match(req).then(
-        (hit) =>
-          hit ||
-          fetch(req).then((res) => {
+  // Scripts, styles, the database engine and icons: serve the saved copy, refresh in the background.
+  event.respondWith(
+    caches.match(req).then((hit) => {
+      const network = fetch(req)
+        .then((res) => {
+          if (res.ok) {
             const copy = res.clone();
-            caches.open(ASSETS).then((c) => c.put(req, copy));
-            return res;
-          }),
-      ),
-    );
-  }
-});
-
-self.addEventListener("push", (event) => {
-  let data = {};
-  try {
-    data = event.data ? event.data.json() : {};
-  } catch {
-    data = { title: "Limitless", body: event.data ? event.data.text() : "" };
-  }
-  const title = data.title || "Limitless";
-  event.waitUntil(
-    self.registration.showNotification(title, {
-      body: data.body || "",
-      icon: "/icons/icon-192.png",
-      badge: "/icons/badge-96.png",
-      tag: data.tag || undefined,
-      data: { url: data.url || "/" },
-    }),
-  );
-});
-
-self.addEventListener("notificationclick", (event) => {
-  event.notification.close();
-  const target = new URL(event.notification.data?.url || "/", self.location.origin).href;
-  event.waitUntil(
-    self.clients.matchAll({ type: "window", includeUncontrolled: true }).then((wins) => {
-      for (const w of wins) {
-        if (new URL(w.url).origin === self.location.origin) {
-          return w.focus().then(() => w.navigate(target));
-        }
-      }
-      return self.clients.openWindow(target);
+            caches.open(CACHE).then((c) => c.put(req, copy));
+          }
+          return res;
+        })
+        .catch(() => hit);
+      return hit || network;
     }),
   );
 });

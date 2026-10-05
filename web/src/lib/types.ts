@@ -11,13 +11,11 @@ export type Homework = {
   notes: string | null;
   url: string | null;
   source: string;
-  approval?: string;
   completed_at?: string | null;
 };
 
 export type CalEvent = {
   id: number;
-  feed_id: number | null;
   source: string;
   title: string;
   start: string;
@@ -46,22 +44,6 @@ export type Goal = {
   status: "active" | "done" | "archived";
   steps: GoalStep[];
   progress: number;
-};
-
-export type ImportantEmail = {
-  id: number;
-  from_name: string | null;
-  from_addr: string | null;
-  subject: string | null;
-  snippet: string | null;
-  summary: string | null;
-  received_at: string;
-  reason: string | null;
-  read: number;
-  account_label?: string;
-  account_host?: string;
-  message_id?: string;
-  appointment_count?: number;
 };
 
 export type Project = {
@@ -102,33 +84,24 @@ export type Today = {
     calorieTarget: number | null;
     proteinTarget: number | null;
   };
-  emails: { unread: number; items: ImportantEmail[] };
   goals: Goal[];
   projects: Pick<Project, "id" | "name" | "emoji" | "status">[];
   journal: { writtenToday: boolean; streak: number; tomorrowSet: number };
-  pendingApprovals: number;
 };
 
+export type TimedReminder = { enabled: boolean; time: string };
+
 export type Settings = {
-  prefs: { name: string; timezone: string; timezoneConfirmed: boolean; units: "lb" | "kg" };
+  prefs: { name: string; timezone: string; units: "lb" | "kg" };
   reminders: {
-    morningBriefing: { enabled: boolean; time: string };
-    weighIn: { enabled: boolean; time: string };
-    homeworkEvening: { enabled: boolean; time: string };
-    journal: { enabled: boolean; time: string };
+    morningBriefing: TimedReminder;
+    weighIn: TimedReminder;
+    homeworkEvening: TimedReminder;
+    journal: TimedReminder;
     homeworkDueSoon: { enabled: boolean; hours: number };
     events: { enabled: boolean; minutesBefore: number };
   };
   bulk: BulkSettings;
-  schoology: {
-    hasIcal: boolean;
-    hasApi: boolean;
-    autoApprove: boolean;
-    lastSynced: string | null;
-    lastError: string | null;
-    lastImported: number;
-  };
-  push: { publicKey: string; devices: number };
 };
 
 export type BulkSettings = {

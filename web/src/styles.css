@@ -213,23 +213,6 @@ textarea {
   color: var(--light);
 }
 
-.dot-badge {
-  position: absolute;
-  top: -5px;
-  right: -5px;
-  min-width: 19px;
-  height: 19px;
-  padding: 0 5px;
-  border-radius: 10px;
-  background: var(--bad);
-  color: #fff;
-  font-size: 11px;
-  font-weight: 700;
-  display: grid;
-  place-items: center;
-  border: 2px solid var(--bg);
-}
-
 .page {
   padding: 16px;
   display: flex;
@@ -287,21 +270,6 @@ textarea {
   border-radius: 0 0 4px 4px;
   background: var(--metal);
   background-size: 640px 130px, cover;
-}
-
-.tab .badge-inline {
-  position: absolute;
-  top: 8px;
-  left: calc(50% + 6px);
-  min-width: 17px;
-  height: 17px;
-  padding: 0 4px;
-  border-radius: 9px;
-  font-size: 10px;
-  background: var(--bad);
-  color: #fff;
-  display: grid;
-  place-items: center;
 }
 
 /* ---------- Cards ---------- */
@@ -1230,27 +1198,6 @@ details.help li + li {
   margin-top: 4px;
 }
 
-.approval {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 14px 16px;
-  border-top: 1px solid var(--line);
-}
-
-.approval:first-child {
-  border-top: 0;
-}
-
-.approval .actions {
-  display: flex;
-  gap: 8px;
-}
-
-.approval .actions .btn {
-  flex: 1;
-}
-
 @media (min-width: 420px) {
   .stat-grid {
     grid-template-columns: repeat(3, 1fr);
@@ -1262,10 +1209,6 @@ details.help li + li {
     animation: none !important;
     transition: none !important;
   }
-}
-
-.spin {
-  animation: spin 0.9s linear infinite;
 }
 
 .btn {
@@ -1294,7 +1237,7 @@ details.help li + li {
 }
 
 .setting-row input[type="time"].input {
-  width: 116px;
+  width: 128px;
   font-size: 15px;
   padding: 7px 8px;
 }
@@ -1316,20 +1259,3 @@ details.help li + li {
   font-size: 22px;
 }
 
-.email-preview {
-  background: var(--surface-2);
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  padding: 12px;
-}
-
-.email-body {
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-  font-size: 14px;
-  line-height: 1.5;
-  color: var(--ink-2);
-  max-height: 340px;
-  overflow-y: auto;
-  -webkit-overflow-scrolling: touch;
-}

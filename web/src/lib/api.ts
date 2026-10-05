@@ -1,3 +1,5 @@
+import { localRequest } from "./localApi";
+
 export class ApiError extends Error {
   status: number;
   constructor(status: number, message: string) {
@@ -6,24 +8,12 @@ export class ApiError extends Error {
   }
 }
 
+/** Everything is stored on this phone, so "requests" are answered in-page by the local data layer. */
 async function request<T>(method: string, path: string, body?: unknown): Promise<T> {
-  let res: Response;
-  try {
-    res = await fetch(`/api${path}`, {
-      method,
-      headers: body !== undefined ? { "Content-Type": "application/json" } : undefined,
-      body: body !== undefined ? JSON.stringify(body) : undefined,
-      credentials: "same-origin",
-    });
-  } catch {
-    throw new ApiError(0, "You're offline. Try again when you have a connection.");
-  }
-  if (res.status === 401 && !path.startsWith("/auth")) {
-    window.dispatchEvent(new Event("limitless:unauthorized"));
-  }
-  const data = await res.json().catch(() => ({}));
-  if (!res.ok) throw new ApiError(res.status, (data as { error?: string }).error ?? `Request failed (${res.status})`);
-  return data as T;
+  const res = await localRequest(method, path, body);
+  if (res.status >= 400) throw new ApiError(res.status, (res.body as { error?: string }).error ?? `Request failed (${res.status})`);
+  // Hand screens their own copy, like a real network response would.
+  return structuredClone(res.body) as T;
 }
 
 export const api = {

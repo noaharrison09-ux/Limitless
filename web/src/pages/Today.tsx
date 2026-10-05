@@ -3,53 +3,28 @@ import { Link } from "react-router-dom";
 import { api, errorMessage, refreshAll, toast } from "../lib/api";
 import { useApi } from "../lib/hooks";
 import { dateStr, fmtDue, fmtLongDate, fmtTime, greeting, isOverdue, todayStr } from "../lib/dates";
-import { currentSubscription, enablePush, isIos, needsInstallForPush, pushSupported } from "../lib/push";
-import type { Homework, Settings, Today } from "../lib/types";
+import { isIos, isStandalone } from "../lib/device";
+import type { Homework, Today } from "../lib/types";
 import { Icon } from "../components/Icon";
 import { Card, ErrorBox, Progress, Spinner, fmtNum, signed } from "../components/ui";
 
-function NotificationPrompt() {
-  const [state, setState] = useState<"unknown" | "on" | "off">("unknown");
-  const [error, setError] = useState<string | null>(null);
-  useEffect(() => {
-    currentSubscription()
-      .then((s) => setState(s ? "on" : "off"))
-      .catch(() => setState("off"));
-  }, []);
-  if (state !== "off") return null;
-
-  if (needsInstallForPush()) {
-    return (
-      <Card className="accent-edge" eyebrow="Get notifications" title="Add Limitless to your Home Screen">
-        <p className="small" style={{ margin: 0, color: "var(--ink-2)" }}>
-          On iPhone, notifications only work for apps on your Home Screen. Tap <strong>Share</strong> → <strong>Add to Home Screen</strong>, then open Limitless from there and tap “Turn on”.
-        </p>
-      </Card>
-    );
-  }
-  if (!pushSupported()) return null;
-
-  const turnOn = async () => {
-    setError(null);
-    try {
-      const s = await api.get<Settings>("/settings");
-      await enablePush(s.push.publicKey);
-      setState("on");
-      toast("Notifications on");
-    } catch (err) {
-      setError(errorMessage(err));
-    }
-  };
+/** Data lives in the installed app, so nudge people to install before they start logging. */
+function InstallPrompt() {
+  if (isStandalone()) return null;
   return (
-    <Card className="accent-edge" eyebrow="Stay in the loop" title="Turn on notifications">
-      <p className="small" style={{ margin: "0 0 12px", color: "var(--ink-2)" }}>
-        Morning briefing, homework due soon, important emails, and things waiting for your approval.
+    <Card className="accent-edge" eyebrow="Get the app" title="Add Limitless to your Home Screen">
+      <p className="small" style={{ margin: 0, color: "var(--ink-2)" }}>
+        {isIos() ? (
+          <>
+            In Safari, tap <strong>Share</strong> → <strong>Add to Home Screen</strong>, then always open Limitless from that icon. On iPhone the Home Screen
+            app keeps its own data, separate from Safari, so start using it from there.
+          </>
+        ) : (
+          <>
+            In Chrome, tap <strong>⋮</strong> → <strong>Install app</strong> (or <strong>Add to Home screen</strong>), then open Limitless from that icon.
+          </>
+        )}
       </p>
-      <ErrorBox error={error} />
-      <button className="btn primary block" onClick={turnOn} style={{ marginTop: error ? 10 : 0 }}>
-        <Icon name="bell" size={18} /> Turn on
-      </button>
-      {isIos() && <p className="tiny muted" style={{ margin: "8px 0 0" }}>Requires iOS 16.4 or newer.</p>}
     </Card>
   );
 }
@@ -103,7 +78,6 @@ function QuickWeigh({ units, onSaved }: { units: string; onSaved: () => void }) 
 
 export function TodayPage() {
   const { data, error, reload, setData } = useApi<Today>("/today");
-  const counts = useApi<{ unread: number }>("/notifications").data;
   const [nnText, setNnText] = useState("");
 
   if (!data) return error ? <div className="page"><ErrorBox error={error} /></div> : <Spinner />;
@@ -150,9 +124,8 @@ export function TodayPage() {
               {data.name ? `, ${data.name}` : ""}
             </h1>
           </div>
-          <Link to="/notifications" className="icon-btn" aria-label="Notifications">
-            <Icon name="bell" />
-            {counts?.unread ? <span className="dot-badge">{counts.unread > 9 ? "9+" : counts.unread}</span> : null}
+          <Link to="/settings" className="icon-btn" aria-label="Settings">
+            <Icon name="gear" />
           </Link>
         </div>
         <div className="hero-stats">
@@ -175,22 +148,7 @@ export function TodayPage() {
       </header>
 
       <div className="page">
-        {data.pendingApprovals > 0 && (
-          <Link to="/approvals" style={{ textDecoration: "none", color: "inherit" }}>
-            <section className="card accent-edge" style={{ display: "flex", alignItems: "center", gap: 12 }}>
-              <div className="row-main">
-                <div className="eyebrow">Needs your OK</div>
-                <h2 style={{ fontSize: 18 }}>
-                  {data.pendingApprovals} {data.pendingApprovals === 1 ? "item" : "items"} waiting for approval
-                </h2>
-                <div className="small muted">Approve them to add to your calendar.</div>
-              </div>
-              <Icon name="chevR" />
-            </section>
-          </Link>
-        )}
-
-        <NotificationPrompt />
+        <InstallPrompt />
 
         <Card
           eyebrow="Non-negotiables"
@@ -306,28 +264,6 @@ export function TodayPage() {
           )}
           {!b.weighedInToday && <QuickWeigh units={data.units} onSaved={() => refreshAll()} />}
         </Card>
-
-        {data.emails.unread > 0 && (
-          <Card
-            eyebrow="Important email"
-            title={`${data.emails.unread} unread`}
-            action={
-              <Link className="link-btn" to="/inbox">
-                Inbox <Icon name="chevR" size={16} />
-              </Link>
-            }
-          >
-            {data.emails.items.slice(0, 3).map((m) => (
-              <Link key={m.id} to="/inbox" className="row" style={{ padding: "10px 0" }}>
-                <Icon name="mail" size={20} />
-                <div className="row-main">
-                  <div className="row-title">{m.from_name || m.from_addr}</div>
-                  <div className="row-sub">{m.summary || m.subject}</div>
-                </div>
-              </Link>
-            ))}
-          </Card>
-        )}
 
         {data.goals.length > 0 && (
           <Card

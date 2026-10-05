@@ -6,6 +6,7 @@ import { addDays, dateStr, fmtDay, fmtTime, parseDate, todayStr } from "../lib/d
 import type { CalEvent, Homework } from "../lib/types";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Fab, Field, Segmented, Sheet, TopBar } from "../components/ui";
+import { PhoneCalendarButton } from "../components/PhoneCalendar";
 
 type Range = { events: CalEvent[]; homework: Pick<Homework, "id" | "title" | "course" | "due_at" | "all_day" | "status">[] };
 
@@ -84,7 +85,6 @@ export function EventSheet({ initialDate, event, onClose }: { initialDate: strin
   const [location, setLocation] = useState(event?.location ?? "");
   const [description, setDescription] = useState(event?.description ?? "");
   const [error, setError] = useState<string | null>(null);
-  const readOnly = event?.source === "feed";
 
   const save = async (e: FormEvent) => {
     e.preventDefault();
@@ -106,22 +106,6 @@ export function EventSheet({ initialDate, event, onClose }: { initialDate: strin
     refreshAll();
     onClose();
   };
-
-  if (readOnly && event) {
-    return (
-      <Sheet title={event.title} onClose={onClose}>
-        <div className="form">
-          <div className="notice">
-            <strong>{fmtDay(dateStr(new Date(event.start)), { long: true })}</strong>
-            {event.all_day ? " · All day" : ` · ${fmtTime(event.start)}${event.end ? ` – ${fmtTime(event.end)}` : ""}`}
-            {event.location && <div>{event.location}</div>}
-          </div>
-          {event.description && <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{event.description}</p>}
-          <p className="small muted" style={{ margin: 0 }}>From your linked calendar “{event.feed_name}”. Edit it there.</p>
-        </div>
-      </Sheet>
-    );
-  }
 
   return (
     <Sheet title={event ? "Edit event" : "New event"} onClose={onClose}>
@@ -150,6 +134,7 @@ export function EventSheet({ initialDate, event, onClose }: { initialDate: strin
         <button className="btn primary block" disabled={!title || !date}>
           {event ? "Save" : "Add to calendar"}
         </button>
+        {event && <PhoneCalendarButton path={`/ics/events/${event.id}`} />}
         {event && (
           <button type="button" className="btn danger block" onClick={remove}>
             <Icon name="trash" size={18} /> Delete
@@ -166,7 +151,6 @@ export function CalendarPage() {
   const [month, setMonth] = useState(today.slice(0, 7));
   const [selected, setSelected] = useState(today);
   const [sheet, setSheet] = useState<{ event?: CalEvent } | null>(null);
-  const counts = useApi<{ pendingApprovals: number }>("/notifications").data;
 
   const grid = useMemo(() => monthGrid(month), [month]);
   const from = view === "month" ? grid[0] : today;
@@ -183,30 +167,18 @@ export function CalendarPage() {
   };
 
   const agendaDays = [...byDay.keys()].filter((d) => d >= today).sort();
-  const pending = counts?.pendingApprovals ?? 0;
 
   return (
     <>
       <TopBar
         title="Calendar"
         right={
-          <Link to="/approvals" className="icon-btn" aria-label="Approvals">
-            <Icon name="approve" />
-            {pending ? <span className="dot-badge">{pending > 9 ? "9+" : pending}</span> : null}
+          <Link to="/import" className="icon-btn" aria-label="Import a calendar file">
+            <Icon name="download" />
           </Link>
         }
       />
       <div className="page">
-        {pending > 0 && (
-          <Link to="/approvals" className="card accent-edge" style={{ textDecoration: "none", color: "inherit", display: "flex", alignItems: "center", gap: 10 }}>
-            <div className="row-main">
-              <strong>{pending} waiting for your approval</strong>
-              <div className="small muted">Nothing is added to your calendar until you say so.</div>
-            </div>
-            <Icon name="chevR" />
-          </Link>
-        )}
-
         <Segmented
           value={view}
           onChange={setView}
@@ -284,7 +256,7 @@ export function CalendarPage() {
               ))
             ) : (
               <Empty icon="calendar" title="Nothing coming up">
-                Link your Google or Apple calendar in Settings, or add an event.
+                Add an event with +, or import a calendar file from Schoology or Google.
               </Empty>
             )}
           </section>

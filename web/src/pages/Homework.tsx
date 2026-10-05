@@ -1,3 +1,4 @@
+import { Link } from "react-router-dom";
 import { useState, type FormEvent } from "react";
 import { api, errorMessage, refreshAll, toast } from "../lib/api";
 import { useApi } from "../lib/hooks";
@@ -5,6 +6,7 @@ import { addDays, dateStr, fmtDue, isOverdue, timeStr, todayStr } from "../lib/d
 import type { Homework } from "../lib/types";
 import { Icon } from "../components/Icon";
 import { Empty, ErrorBox, Fab, Field, Segmented, Sheet, Spinner, TopBar } from "../components/ui";
+import { PhoneCalendarButton } from "../components/PhoneCalendar";
 
 function bucket(h: Homework): string {
   if (!h.due_at) return "No due date";
@@ -103,6 +105,7 @@ function HomeworkSheet({ item, courses, onClose }: { item?: Homework; courses: s
             <Icon name="external" size={18} /> Open in Schoology
           </a>
         )}
+        {item?.due_at && <PhoneCalendarButton path={`/ics/homework/${item.id}`} />}
         <ErrorBox error={error} />
         <button className="btn primary block" disabled={!title}>
           {item ? "Save" : "Add assignment"}
@@ -121,9 +124,7 @@ export function HomeworkPage() {
   const [tab, setTab] = useState<"open" | "done">("open");
   const { data, error, setData } = useApi<Homework[]>(`/homework?status=${tab}`);
   const courses = useApi<string[]>("/homework/courses").data ?? [];
-  const settings = useApi<{ schoology: { hasIcal: boolean; hasApi: boolean } }>("/settings").data;
   const [sheet, setSheet] = useState<{ item?: Homework } | null>(null);
-  const [syncing, setSyncing] = useState(false);
   const [course, setCourse] = useState("all");
 
   const toggle = async (h: Homework) => {
@@ -134,19 +135,6 @@ export function HomeworkPage() {
     refreshAll();
   };
 
-  const sync = async () => {
-    setSyncing(true);
-    try {
-      const r = await api.post<{ imported: number }>("/schoology/sync");
-      toast(r.imported ? `${r.imported} new from Schoology — check Approvals` : "Schoology is up to date");
-      refreshAll();
-    } catch (err) {
-      toast(errorMessage(err));
-    } finally {
-      setSyncing(false);
-    }
-  };
-
   const items = (data ?? []).filter((h) => course === "all" || h.course === course);
   const groups = new Map<string, Homework[]>();
   for (const h of items) {
@@ -154,18 +142,15 @@ export function HomeworkPage() {
     groups.set(b, [...(groups.get(b) ?? []), h]);
   }
   const groupNames = tab === "done" ? ["Completed"] : ORDER.filter((g) => groups.has(g));
-  const hasSchoology = settings?.schoology.hasIcal || settings?.schoology.hasApi;
 
   return (
     <>
       <TopBar
         title="Homework"
         right={
-          hasSchoology ? (
-            <button className="icon-btn" aria-label="Sync Schoology" onClick={sync} disabled={syncing}>
-              <Icon name="refresh" className={syncing ? "spin" : ""} />
-            </button>
-          ) : undefined
+          <Link to="/import" className="icon-btn" aria-label="Import from Schoology">
+            <Icon name="download" />
+          </Link>
         }
       />
       <div className="page">
@@ -192,7 +177,11 @@ export function HomeworkPage() {
         ) : items.length === 0 ? (
           <section className="card">
             <Empty icon="book" title={tab === "done" ? "Nothing finished yet" : "No homework"}>
-              {tab === "open" && !hasSchoology ? "Connect Schoology in Settings to import assignments automatically, or tap + to add one." : null}
+              {tab === "open" ? (
+                <>
+                  Tap + to add one, or <Link to="/import">import your Schoology calendar</Link>.
+                </>
+              ) : null}
             </Empty>
           </section>
         ) : (
@@ -214,7 +203,7 @@ export function HomeworkPage() {
                         <span>{fmtDue(h.due_at, h.all_day)}</span>
                         {h.course && <span className="chip">{h.course}</span>}
                         {h.status === "doing" && <span className="chip warn">In progress</span>}
-                        {h.source === "schoology" && <span className="chip">Schoology</span>}
+                        {h.source === "import" && <span className="chip">Imported</span>}
                       </div>
                     </button>
                   </div>

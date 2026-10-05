@@ -6,9 +6,8 @@ import { TopBar, fmtNum } from "../components/ui";
 
 export function MorePage() {
   const today = useApi<Today>("/today").data;
-  const counts = useApi<{ unread: number; pendingApprovals: number }>("/notifications").data;
 
-  const tiles: { to: string; icon: IconName; title: string; sub: string; badge?: number }[] = [
+  const tiles: { to: string; icon: IconName; title: string; sub: string }[] = [
     {
       to: "/body",
       icon: "dumbbell",
@@ -17,11 +16,9 @@ export function MorePage() {
     },
     { to: "/goals", icon: "target", title: "Goals", sub: today?.goals.length ? `${today.goals.length} active` : "Set your targets" },
     { to: "/projects", icon: "bulb", title: "Ideas & projects", sub: "Thoughts and plans" },
-    { to: "/inbox", icon: "mail", title: "Important email", sub: "Screened for you", badge: today?.emails.unread },
-    { to: "/approvals", icon: "approve", title: "Approvals", sub: "Calendar requests", badge: counts?.pendingApprovals },
-    { to: "/notifications", icon: "bell", title: "Notifications", sub: "Recent alerts", badge: counts?.unread },
     { to: "/journal", icon: "journal", title: "Journal", sub: today?.journal.streak ? `${today.journal.streak}-day streak` : "Daily reflection" },
-    { to: "/settings", icon: "gear", title: "Settings", sub: "Connections & reminders" },
+    { to: "/import", icon: "download", title: "Import calendar", sub: "Schoology or Google file" },
+    { to: "/settings", icon: "gear", title: "Settings", sub: "Reminders & backups" },
   ];
 
   return (
@@ -36,7 +33,6 @@ export function MorePage() {
               </div>
               <strong>{t.title}</strong>
               <div className="tile-sub">{t.sub}</div>
-              {t.badge ? <span className="dot-badge" style={{ top: 10, right: 10 }}>{t.badge > 99 ? "99+" : t.badge}</span> : null}
             </Link>
           ))}
         </div>
