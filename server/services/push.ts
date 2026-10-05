@@ -1,10 +1,29 @@
 import webpush from "web-push";
 import { all, get, getSetting, run, setSetting } from "../db.ts";
 import { decrypt, encrypt } from "../crypto.ts";
+import { config } from "../config.ts";
 
 type Vapid = { publicKey: string; privateKeyEnc: string };
 
-let configured = false;
+let configuredFor = "";
+
+/**
+ * Push services want a contact URL for the sender. Apple rejects placeholder values,
+ * so prefer the app's own https address (recorded the first time a phone subscribes).
+ */
+function vapidSubject(): string {
+  if (process.env.VAPID_SUBJECT) return process.env.VAPID_SUBJECT;
+  if (config.publicUrl.startsWith("https://")) return config.publicUrl;
+  const origin = getSetting<string | null>("publicOrigin", null);
+  if (origin?.startsWith("https://")) return origin;
+  return "mailto:limitless-app@example.com";
+}
+
+export function rememberOrigin(origin: string) {
+  if (origin.startsWith("https://") && getSetting<string | null>("publicOrigin", null) !== origin) {
+    setSetting("publicOrigin", origin);
+  }
+}
 
 /** VAPID keys identify this server to the phone's push service. Generated once and stored. */
 export function vapidPublicKey(): string {
@@ -14,10 +33,10 @@ export function vapidPublicKey(): string {
     vapid = { publicKey: keys.publicKey, privateKeyEnc: encrypt(keys.privateKey) };
     setSetting("vapid", vapid);
   }
-  if (!configured) {
-    const subject = process.env.VAPID_SUBJECT || "mailto:limitless-app@example.com";
+  const subject = vapidSubject();
+  if (configuredFor !== subject) {
     webpush.setVapidDetails(subject, vapid.publicKey, decrypt(vapid.privateKeyEnc));
-    configured = true;
+    configuredFor = subject;
   }
   return vapid.publicKey;
 }

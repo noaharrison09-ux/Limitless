@@ -10,6 +10,9 @@ const MAX_AGE_MS = 400 * 24 * 60 * 60 * 1000; // browsers cap cookies at 400 day
 const failures = new Map<string, { count: number; first: number }>();
 const WINDOW_MS = 15 * 60 * 1000;
 const MAX_FAILURES = 8;
+/** Cap on wrong passwords from everyone combined, in case an attacker rotates IPs. */
+const MAX_GLOBAL_FAILURES = 40;
+const globalFailures = { count: 0, first: 0 };
 
 function readCookie(req: Request, name: string): string | null {
   const header = req.headers.cookie;
@@ -46,7 +49,8 @@ authRouter.post("/login", (req, res) => {
   const ip = req.ip ?? "unknown";
   const now = Date.now();
   const f = failures.get(ip);
-  if (f && now - f.first < WINDOW_MS && f.count >= MAX_FAILURES) {
+  if (now - globalFailures.first >= WINDOW_MS) Object.assign(globalFailures, { count: 0, first: now });
+  if ((f && now - f.first < WINDOW_MS && f.count >= MAX_FAILURES) || globalFailures.count >= MAX_GLOBAL_FAILURES) {
     res.status(429).json({ error: "Too many attempts. Try again in a few minutes." });
     return;
   }
@@ -54,6 +58,7 @@ authRouter.post("/login", (req, res) => {
   if (!safeEqual(password, config.appPassword)) {
     if (!f || now - f.first >= WINDOW_MS) failures.set(ip, { count: 1, first: now });
     else f.count++;
+    globalFailures.count++;
     res.status(401).json({ error: "Wrong password" });
     return;
   }

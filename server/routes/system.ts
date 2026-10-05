@@ -3,7 +3,7 @@ import { all, get, run } from "../db.ts";
 import { encrypt } from "../crypto.ts";
 import { load, patch, type Prefs, type ReminderSettings } from "../settings.ts";
 import { isValidZone } from "../time.ts";
-import { notify, removeSubscription, saveSubscription, vapidPublicKey } from "../services/push.ts";
+import { notify, rememberOrigin, removeSubscription, saveSubscription, vapidPublicKey } from "../services/push.ts";
 import { syncSchoology } from "../services/schoology.ts";
 import { approveAll, decideEvent, decideHomework, listPending, pendingCount } from "../services/approvals.ts";
 import { HttpError, idParam } from "./crud.ts";
@@ -133,6 +133,7 @@ systemRouter.post("/push/subscribe", (req, res) => {
   const sub = req.body?.subscription;
   if (!sub?.endpoint || !sub?.keys?.p256dh || !sub?.keys?.auth) throw new HttpError(400, "Bad subscription");
   saveSubscription(sub, req.headers["user-agent"]);
+  rememberOrigin(`${req.protocol}://${req.get("host")}`);
   res.json({ ok: true });
 });
 

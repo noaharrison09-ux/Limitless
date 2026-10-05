@@ -4,5 +4,8 @@ export default defineConfig({
   test: {
     include: ["server/**/*.test.ts"],
     environment: "node",
+    setupFiles: ["server/test/setup.ts"],
+    pool: "forks",
+    execArgv: ["--disable-warning=ExperimentalWarning"],
   },
 });

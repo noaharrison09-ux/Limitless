@@ -15,7 +15,8 @@ import { dashboardRouter } from "./routes/dashboard.ts";
 
 export function createApp(opts: { staticDir?: string } = {}) {
   const app = express();
-  app.set("trust proxy", true);
+  // Trust only the host's own proxy hop, so a client can't fake its IP with X-Forwarded-For.
+  app.set("trust proxy", Number(process.env.TRUST_PROXY_HOPS ?? 1));
   app.disable("x-powered-by");
   app.use(express.json({ limit: "1mb" }));
 

@@ -97,7 +97,7 @@ export async function testConnection(a: Pick<Account, "host" | "port" | "secure"
   const client = imapClient(a, password);
   await client.connect();
   try {
-    const lock = await client.getMailboxLock(a.mailbox || "INBOX");
+    const lock = await client.getMailboxLock(a.mailbox || "INBOX", { readOnly: true });
     lock.release();
   } finally {
     await client.logout().catch(() => {});
@@ -202,7 +202,7 @@ async function pollAccount(account: Account, rules: Rule[]) {
   const client = imapClient(account, decrypt(account.password_enc));
   await client.connect();
   try {
-    const lock = await client.getMailboxLock(account.mailbox || "INBOX");
+    const lock = await client.getMailboxLock(account.mailbox || "INBOX", { readOnly: true });
     try {
       const mb = client.mailbox;
       if (!mb) throw new Error("Mailbox not open");

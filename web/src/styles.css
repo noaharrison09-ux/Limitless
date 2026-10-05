@@ -1264,3 +1264,55 @@ details.help li + li {
     transition: none !important;
   }
 }
+
+.spin {
+  animation: spin 0.9s linear infinite;
+}
+
+.btn {
+  white-space: nowrap;
+}
+
+.card.flush > .card-head {
+  padding: 14px 16px 2px;
+  margin-bottom: 0;
+}
+
+.note-meta {
+  flex-wrap: wrap;
+}
+
+.note-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  width: 100%;
+}
+
+.note-actions select {
+  flex: 1;
+  min-width: 0;
+}
+
+.setting-row input[type="time"].input {
+  width: 116px;
+  font-size: 15px;
+  padding: 7px 8px;
+}
+
+.setting-row > div:first-child {
+  min-width: 0;
+}
+
+.stat-grid {
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+}
+
+.stat {
+  padding: 11px 12px;
+}
+
+.stat .value {
+  font-size: 22px;
+}
